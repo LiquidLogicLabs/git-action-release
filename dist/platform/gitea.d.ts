@@ -52,7 +52,7 @@ export declare class GiteaProvider extends BaseProvider {
      * Generate release notes (Gitea doesn't have built-in release notes generation)
      * Return empty string as placeholder
      */
-    generateReleaseNotes(tag: string, previousTag?: string): Promise<string>;
+    generateReleaseNotes(_tag: string, _previousTag?: string): Promise<string>;
     /**
      * Override request method to use Gitea-specific headers
      */

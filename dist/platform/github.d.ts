@@ -25,6 +25,8 @@ export declare class GitHubProvider extends BaseProvider {
     updateRelease(releaseId: string, config: Partial<ReleaseConfig>): Promise<ReleaseResult>;
     /**
      * Get a release by tag
+     * Note: GitHub API has issues with draft releases via /releases/tags/{tag}
+     * So we try the tag endpoint first, then fall back to listing releases if it's a draft
      */
     getReleaseByTag(tag: string): Promise<ReleaseResult | null>;
     /**

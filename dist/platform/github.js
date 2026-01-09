@@ -129,10 +129,13 @@ class GitHubProvider extends provider_1.BaseProvider {
     }
     /**
      * Get a release by tag
+     * Note: GitHub API has issues with draft releases via /releases/tags/{tag}
+     * So we try the tag endpoint first, then fall back to listing releases if it's a draft
      */
     async getReleaseByTag(tag) {
         this.logger.debug(`Getting GitHub release by tag: ${tag}`);
         try {
+            // Try the direct tag endpoint first (works for published releases)
             const url = `${this.apiBaseUrl}/repos/${this.owner}/${this.repo}/releases/tags/${tag}`;
             const { data } = await this.request(url, {
                 method: 'GET',
@@ -153,7 +156,63 @@ class GitHubProvider extends provider_1.BaseProvider {
             };
         }
         catch (error) {
-            if (error.message && error.message.includes('404')) {
+            // If 404, might be a draft release - try listing all releases
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            if (errorMessage.includes('404')) {
+                this.logger.debug(`Release not found via tag endpoint, checking drafts for tag: ${tag}`);
+                try {
+                    // List releases and find by tag_name (this works for drafts too)
+                    // Retry logic: GitHub might need a moment to index draft releases
+                    let release = null;
+                    let lastReleasesList = [];
+                    const maxRetries = 3;
+                    const retryDelay = 1000; // 1 second
+                    for (let attempt = 0; attempt < maxRetries; attempt++) {
+                        if (attempt > 0) {
+                            this.logger.debug(`Retry ${attempt}/${maxRetries - 1} to find draft release by tag: ${tag}`);
+                            await new Promise((resolve) => setTimeout(resolve, retryDelay));
+                        }
+                        const listUrl = `${this.apiBaseUrl}/repos/${this.owner}/${this.repo}/releases?per_page=100`;
+                        const { data: releases } = await this.request(listUrl, {
+                            method: 'GET',
+                        });
+                        lastReleasesList = releases;
+                        this.logger.debug(`Found ${releases.length} releases in list (attempt ${attempt + 1}), looking for tag: ${tag}`);
+                        const foundRelease = releases.find((r) => r.tag_name === tag);
+                        if (foundRelease) {
+                            release = foundRelease;
+                            this.logger.debug(`Found draft release in list: ${release.id}, draft: ${release.draft}`);
+                            break;
+                        }
+                    }
+                    if (release) {
+                        const assets = {};
+                        release.assets.forEach((asset) => {
+                            assets[asset.name] = asset.browser_download_url;
+                        });
+                        return {
+                            id: release.id.toString(),
+                            html_url: release.html_url,
+                            upload_url: release.upload_url.replace('{?name,label}', ''),
+                            tarball_url: release.tarball_url,
+                            zipball_url: release.zipball_url,
+                            assets,
+                            draft: release.draft,
+                            prerelease: release.prerelease,
+                        };
+                    }
+                    else {
+                        const availableTags = lastReleasesList.length > 0
+                            ? lastReleasesList.slice(0, 5).map((r) => r.tag_name).join(', ')
+                            : 'none';
+                        this.logger.debug(`Draft release not found in list after ${maxRetries} attempts. Available tags: ${availableTags}`);
+                    }
+                }
+                catch (listError) {
+                    // If listing also fails, return null
+                    const errorMessage = listError instanceof Error ? listError.message : String(listError);
+                    this.logger.debug(`Failed to list releases: ${errorMessage}`);
+                }
                 return null;
             }
             throw error;

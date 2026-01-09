@@ -1,0 +1,25 @@
+{
+  "action": "opened",
+  "number": 1,
+  "pull_request": {
+    "number": 1,
+    "head": {
+      "ref": "feature-branch",
+      "sha": "abc123"
+    },
+    "base": {
+      "ref": "main",
+      "sha": "def456"
+    }
+  },
+  "repository": {
+    "full_name": "LiquidLogicLabs/git-release-action",
+    "name": "git-release-action",
+    "owner": {
+      "login": "LiquidLogicLabs"
+    }
+  },
+  "sender": {
+    "login": "test-user"
+  }
+}

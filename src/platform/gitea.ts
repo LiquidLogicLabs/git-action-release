@@ -46,7 +46,14 @@ export class GiteaProvider extends BaseProvider {
   async createRelease(config: ReleaseConfig): Promise<ReleaseResult> {
     this.logger.debug(`Creating Gitea release for tag: ${config.tag}`);
 
-    const releaseData: any = {
+    const releaseData: {
+      tag_name: string;
+      name: string;
+      body: string;
+      draft: boolean;
+      prerelease: boolean;
+      [key: string]: string | boolean | undefined;
+    } = {
       tag_name: config.tag,
       name: config.name || config.tag,
       body: config.body || '',
@@ -96,7 +103,12 @@ export class GiteaProvider extends BaseProvider {
   async updateRelease(releaseId: string, config: Partial<ReleaseConfig>): Promise<ReleaseResult> {
     this.logger.debug(`Updating Gitea release: ${releaseId}`);
 
-    const releaseData: any = {};
+    const releaseData: {
+      name?: string;
+      body?: string;
+      draft?: boolean;
+      prerelease?: boolean;
+    } = {};
 
     if (config.name !== undefined) {
       releaseData.name = config.name;
@@ -176,8 +188,9 @@ export class GiteaProvider extends BaseProvider {
         draft: data.draft,
         prerelease: data.prerelease,
       };
-    } catch (error: any) {
-      if (error.message && error.message.includes('404')) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('404')) {
         return null;
       }
       throw error;
@@ -308,7 +321,7 @@ export class GiteaProvider extends BaseProvider {
    * Generate release notes (Gitea doesn't have built-in release notes generation)
    * Return empty string as placeholder
    */
-  async generateReleaseNotes(tag: string, previousTag?: string): Promise<string> {
+  async generateReleaseNotes(_tag: string, _previousTag?: string): Promise<string> {
     this.logger.debug(`Gitea does not support automatic release notes generation`);
     this.logger.warning('Gitea does not support automatic release notes generation. Consider using a changelog generator action.');
     return '';
@@ -330,7 +343,7 @@ export class GiteaProvider extends BaseProvider {
 
     // Remove Content-Type if body is FormData (let fetch set boundary)
     if (options.body instanceof FormData) {
-      delete (headers as any)['Content-Type'];
+      delete headers['Content-Type'];
     }
 
     const response = await fetch(url, {

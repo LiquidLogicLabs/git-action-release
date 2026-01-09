@@ -1,4 +1,17 @@
+import * as core from '@actions/core';
 import { PlatformDetector } from '../../platform/detector';
+
+jest.mock('@actions/core', () => ({
+  warning: jest.fn(),
+  info: jest.fn(),
+  debug: jest.fn(),
+  error: jest.fn(),
+  setFailed: jest.fn(),
+  setSecret: jest.fn(),
+  getInput: jest.fn(),
+  getBooleanInput: jest.fn(),
+  setOutput: jest.fn(),
+}));
 
 describe('PlatformDetector', () => {
   const originalEnv = process.env;
@@ -6,6 +19,7 @@ describe('PlatformDetector', () => {
   beforeEach(() => {
     jest.resetModules();
     process.env = { ...originalEnv };
+    jest.clearAllMocks();
   });
 
   afterAll(() => {

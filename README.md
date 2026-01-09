@@ -212,6 +212,11 @@ jobs:
           npm run build
           npm run package
 
+      - name: Set release token
+        env:
+          RELEASE_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: echo "RELEASE_TOKEN set"
+
       - uses: LiquidLogicLabs/git-release-action@v1
         with:
           tag: ${{ github.ref_name }}
@@ -219,7 +224,7 @@ jobs:
           bodyFile: CHANGELOG.md
           artifacts: 'dist/*.zip,dist/*.tar.gz'
           generateReleaseNotes: true
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ env.RELEASE_TOKEN }}
 ```
 
 ### Complete Gitea Release Workflow (Self-Hosted)
@@ -248,6 +253,11 @@ jobs:
           npm run build
           npm run package
 
+      - name: Set release token (Gitea)
+        env:
+          RELEASE_TOKEN: ${{ secrets.GITEA_TOKEN }}
+        run: echo "RELEASE_TOKEN set"
+
       - uses: LiquidLogicLabs/git-release-action@v1
         with:
           platform: 'gitea'
@@ -256,7 +266,7 @@ jobs:
           name: Release ${{ github.ref_name }}
           bodyFile: CHANGELOG.md
           artifacts: 'dist/*.zip,dist/*.tar.gz'
-          token: ${{ secrets.GITEA_TOKEN }}
+          token: ${{ env.RELEASE_TOKEN }}
 ```
 
 ### Draft Release with Auto-Update
@@ -344,9 +354,42 @@ For self-hosted Gitea instances:
 - For large files, consider using a different upload mechanism
 - Set `artifactErrorsFailBuild: true` to fail fast on errors
 
+## Testing
+
+This project includes comprehensive tests at multiple levels:
+
+- **Unit Tests**: Test individual components in isolation
+- **Integration Tests (Mocked)**: Test components with mocked HTTP responses
+- **E2E Tests**: Full end-to-end tests with real API calls
+
+### Running Tests
+
+```bash
+# Run unit tests
+npm run test:unit
+
+# Run integration tests (mocked)
+npm run test:integration
+
+# Run E2E tests (requires tokens)
+export GITHUB_TOKEN="your-token"
+export GITEA_TOKEN="your-token"
+npm run test:e2e
+
+# Run all tests (unit + integration, excludes E2E)
+npm run test:all
+```
+
+For detailed testing information, see [docs/TESTING.md](docs/TESTING.md).
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
+
+Before submitting:
+1. Run tests: `npm run test:all`
+2. Run linter: `npm run lint`
+3. Ensure all tests pass locally
 
 ## License
 

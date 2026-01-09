@@ -1,0 +1,17 @@
+{
+  "ref": "refs/heads/main",
+  "ref_type": "branch",
+  "push": {
+    "ref": "refs/heads/main"
+  },
+  "repository": {
+    "full_name": "LiquidLogicLabs/git-release-action",
+    "name": "git-release-action",
+    "owner": {
+      "login": "LiquidLogicLabs"
+    }
+  },
+  "sender": {
+    "login": "test-user"
+  }
+}

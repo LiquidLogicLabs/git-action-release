@@ -158,7 +158,8 @@ class GiteaProvider extends provider_1.BaseProvider {
             };
         }
         catch (error) {
-            if (error.message && error.message.includes('404')) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            if (errorMessage.includes('404')) {
                 return null;
             }
             throw error;
@@ -261,7 +262,7 @@ class GiteaProvider extends provider_1.BaseProvider {
      * Generate release notes (Gitea doesn't have built-in release notes generation)
      * Return empty string as placeholder
      */
-    async generateReleaseNotes(tag, previousTag) {
+    async generateReleaseNotes(_tag, _previousTag) {
         this.logger.debug(`Gitea does not support automatic release notes generation`);
         this.logger.warning('Gitea does not support automatic release notes generation. Consider using a changelog generator action.');
         return '';

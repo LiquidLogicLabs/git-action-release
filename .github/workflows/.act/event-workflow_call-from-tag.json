@@ -1,0 +1,10 @@
+{
+  "inputs": {},
+  "workflow": {
+    "ref": "refs/tags/v1.0.0",
+    "sha": "test-sha",
+    "repository": {
+      "full_name": "LiquidLogicLabs/git-release-action"
+    }
+  }
+}
