@@ -5,10 +5,10 @@
 export const giteaResponses = {
   createRelease: {
     id: 123456,
-    html_url: 'https://git.ravenwolf.org/l3io/git-release-action-tests/releases/tag/v1.0.0',
-    upload_url: 'https://git.ravenwolf.org/api/v1/repos/l3io/git-release-action-tests/releases/123456/assets',
-    tarball_url: 'https://git.ravenwolf.org/l3io/git-release-action-tests/archive/v1.0.0.tar.gz',
-    zipball_url: 'https://git.ravenwolf.org/l3io/git-release-action-tests/archive/v1.0.0.zip',
+    html_url: 'https://git.ravenwolf.org/l3io/git-action-release-tests/releases/tag/v1.0.0',
+    upload_url: 'https://git.ravenwolf.org/api/v1/repos/l3io/git-action-release-tests/releases/123456/assets',
+    tarball_url: 'https://git.ravenwolf.org/l3io/git-action-release-tests/archive/v1.0.0.tar.gz',
+    zipball_url: 'https://git.ravenwolf.org/l3io/git-action-release-tests/archive/v1.0.0.zip',
     tag_name: 'v1.0.0',
     title: 'v1.0.0',
     note: 'Release body',
@@ -20,10 +20,10 @@ export const giteaResponses = {
 
   updateRelease: {
     id: 123456,
-    html_url: 'https://git.ravenwolf.org/l3io/git-release-action-tests/releases/tag/v1.0.0',
-    upload_url: 'https://git.ravenwolf.org/api/v1/repos/l3io/git-release-action-tests/releases/123456/assets',
-    tarball_url: 'https://git.ravenwolf.org/l3io/git-release-action-tests/archive/v1.0.0.tar.gz',
-    zipball_url: 'https://git.ravenwolf.org/l3io/git-release-action-tests/archive/v1.0.0.zip',
+    html_url: 'https://git.ravenwolf.org/l3io/git-action-release-tests/releases/tag/v1.0.0',
+    upload_url: 'https://git.ravenwolf.org/api/v1/repos/l3io/git-action-release-tests/releases/123456/assets',
+    tarball_url: 'https://git.ravenwolf.org/l3io/git-action-release-tests/archive/v1.0.0.tar.gz',
+    zipball_url: 'https://git.ravenwolf.org/l3io/git-action-release-tests/archive/v1.0.0.zip',
     tag_name: 'v1.0.0',
     title: 'Updated Release Name',
     note: 'Updated release body',
@@ -33,10 +33,10 @@ export const giteaResponses = {
 
   getReleaseByTag: {
     id: 123456,
-    html_url: 'https://git.ravenwolf.org/l3io/git-release-action-tests/releases/tag/v1.0.0',
-    upload_url: 'https://git.ravenwolf.org/api/v1/repos/l3io/git-release-action-tests/releases/123456/assets',
-    tarball_url: 'https://git.ravenwolf.org/l3io/git-release-action-tests/archive/v1.0.0.tar.gz',
-    zipball_url: 'https://git.ravenwolf.org/l3io/git-release-action-tests/archive/v1.0.0.zip',
+    html_url: 'https://git.ravenwolf.org/l3io/git-action-release-tests/releases/tag/v1.0.0',
+    upload_url: 'https://git.ravenwolf.org/api/v1/repos/l3io/git-action-release-tests/releases/123456/assets',
+    tarball_url: 'https://git.ravenwolf.org/l3io/git-action-release-tests/archive/v1.0.0.tar.gz',
+    zipball_url: 'https://git.ravenwolf.org/l3io/git-action-release-tests/archive/v1.0.0.zip',
     tag_name: 'v1.0.0',
     title: 'v1.0.0',
     note: 'Release body',
@@ -46,7 +46,7 @@ export const giteaResponses = {
       {
         id: 789,
         name: 'artifact.zip',
-        browser_download_url: 'https://git.ravenwolf.org/l3io/git-release-action-tests/releases/download/v1.0.0/artifact.zip',
+        browser_download_url: 'https://git.ravenwolf.org/l3io/git-action-release-tests/releases/download/v1.0.0/artifact.zip',
       },
     ],
   },
@@ -54,7 +54,7 @@ export const giteaResponses = {
   uploadAsset: {
     id: 789,
     name: 'artifact.zip',
-    browser_download_url: 'https://git.ravenwolf.org/l3io/git-release-action-tests/releases/download/v1.0.0/artifact.zip',
+    browser_download_url: 'https://git.ravenwolf.org/l3io/git-action-release-tests/releases/download/v1.0.0/artifact.zip',
     size: 1024,
     content_type: 'application/zip',
   },
@@ -63,12 +63,12 @@ export const giteaResponses = {
     {
       id: 789,
       name: 'artifact.zip',
-      browser_download_url: 'https://git.ravenwolf.org/l3io/git-release-action-tests/releases/download/v1.0.0/artifact.zip',
+      browser_download_url: 'https://git.ravenwolf.org/l3io/git-action-release-tests/releases/download/v1.0.0/artifact.zip',
     },
     {
       id: 790,
       name: 'artifact.tar.gz',
-      browser_download_url: 'https://git.ravenwolf.org/l3io/git-release-action-tests/releases/download/v1.0.0/artifact.tar.gz',
+      browser_download_url: 'https://git.ravenwolf.org/l3io/git-action-release-tests/releases/download/v1.0.0/artifact.tar.gz',
     },
   ],
 
@@ -76,11 +76,11 @@ export const giteaResponses = {
     name: 'v1.0.0',
     id: 'abc123',
     message: 'Release v1.0.0',
-    tarball_url: 'https://git.ravenwolf.org/l3io/git-release-action-tests/archive/v1.0.0.tar.gz',
-    zipball_url: 'https://git.ravenwolf.org/l3io/git-release-action-tests/archive/v1.0.0.zip',
+    tarball_url: 'https://git.ravenwolf.org/l3io/git-action-release-tests/archive/v1.0.0.tar.gz',
+    zipball_url: 'https://git.ravenwolf.org/l3io/git-action-release-tests/archive/v1.0.0.zip',
     commit: {
       sha: 'abc123',
-      url: 'https://git.ravenwolf.org/api/v1/repos/l3io/git-release-action-tests/commits/abc123',
+      url: 'https://git.ravenwolf.org/api/v1/repos/l3io/git-action-release-tests/commits/abc123',
     },
   },
 

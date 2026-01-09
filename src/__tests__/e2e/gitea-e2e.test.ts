@@ -10,7 +10,7 @@ import { Logger } from '../../logger';
 import { cleanupRelease, generateTestTag } from './cleanup';
 
 describe('Gitea E2E Tests', () => {
-  const TEST_REPO = process.env.TEST_GITEA_REPO || 'l3io/git-release-action-tests';
+  const TEST_REPO = process.env.TEST_GITEA_REPO || 'l3io/git-action-release-tests';
   const TEST_GITEA_URL = process.env.TEST_GITEA_URL || 'https://git.ravenwolf.org';
   const TEST_TOKEN = process.env.GITEA_TOKEN;
   const [testOwner, testRepo] = TEST_REPO.split('/');

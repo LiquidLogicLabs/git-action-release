@@ -208,7 +208,7 @@ describe('GiteaProvider Integration Tests', () => {
       expect(result).not.toBeNull();
       expect(result?.id).toBe('123456');
       expect(result?.assets['artifact.zip']).toBeDefined();
-      expect(result?.assets['artifact.zip']).toBe('https://git.ravenwolf.org/l3io/git-release-action-tests/releases/download/v1.0.0/artifact.zip');
+      expect(result?.assets['artifact.zip']).toBe('https://git.ravenwolf.org/l3io/git-action-release-tests/releases/download/v1.0.0/artifact.zip');
     });
 
     it('should return null for non-existent release', async () => {

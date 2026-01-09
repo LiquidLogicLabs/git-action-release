@@ -62,8 +62,8 @@ E2E tests are designed to be run multiple times safely:
 
 **Optional environment variables:**
 
-- `TEST_GITHUB_REPO` - GitHub test repository (default: `LiquidLogicLabs/git-release-action-tests`)
-- `TEST_GITEA_REPO` - Gitea test repository (default: `l3io/git-release-action-tests`)
+- `TEST_GITHUB_REPO` - GitHub test repository (default: `LiquidLogicLabs/git-action-release-tests`)
+- `TEST_GITEA_REPO` - Gitea test repository (default: `l3io/git-action-release-tests`)
 - `TEST_GITEA_URL` - Gitea base URL (default: `https://git.ravenwolf.org`)
 - `VERBOSE` - Enable verbose logging (set to `true`)
 

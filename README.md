@@ -1,6 +1,6 @@
 # Multi-Platform Release Action
 
-[![CI](https://github.com/LiquidLogicLabs/git-release-action/actions/workflows/ci.yml/badge.svg)](https://github.com/LiquidLogicLabs/git-release-action/actions/workflows/ci.yml)
+[![CI](https://github.com/LiquidLogicLabs/git-action-release/actions/workflows/ci.yml/badge.svg)](https://github.com/LiquidLogicLabs/git-action-release/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue.svg)](https://www.typescriptlang.org/)
 
@@ -50,7 +50,7 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
-      - uses: LiquidLogicLabs/git-release-action@v1
+      - uses: LiquidLogicLabs/git-action-release@v1
         with:
           tag: ${{ github.ref_name }}
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -73,7 +73,7 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
-      - uses: LiquidLogicLabs/git-release-action@v1
+      - uses: LiquidLogicLabs/git-action-release@v1
         with:
           platform: 'gitea'
           gitea_url: 'https://gitea.example.com'
@@ -84,7 +84,7 @@ jobs:
 ### With Artifacts
 
 ```yaml
-- uses: LiquidLogicLabs/git-release-action@v1
+- uses: LiquidLogicLabs/git-action-release@v1
   with:
     tag: 'v1.0.0'
     artifacts: 'dist/*.zip,binaries/**/*'
@@ -95,7 +95,7 @@ jobs:
 ### With Release Body File
 
 ```yaml
-- uses: LiquidLogicLabs/git-release-action@v1
+- uses: LiquidLogicLabs/git-action-release@v1
   with:
     tag: 'v1.0.0'
     bodyFile: 'CHANGELOG.md'
@@ -105,7 +105,7 @@ jobs:
 ### Explicit Platform Override
 
 ```yaml
-- uses: LiquidLogicLabs/git-release-action@v1
+- uses: LiquidLogicLabs/git-action-release@v1
   with:
     platform: 'github'  # or 'gitea'
     tag: 'v1.0.0'
@@ -217,7 +217,7 @@ jobs:
           RELEASE_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: echo "RELEASE_TOKEN set"
 
-      - uses: LiquidLogicLabs/git-release-action@v1
+      - uses: LiquidLogicLabs/git-action-release@v1
         with:
           tag: ${{ github.ref_name }}
           name: Release ${{ github.ref_name }}
@@ -258,7 +258,7 @@ jobs:
           RELEASE_TOKEN: ${{ secrets.GITEA_TOKEN }}
         run: echo "RELEASE_TOKEN set"
 
-      - uses: LiquidLogicLabs/git-release-action@v1
+      - uses: LiquidLogicLabs/git-action-release@v1
         with:
           platform: 'gitea'
           gitea_url: 'https://gitea.example.com'
@@ -272,7 +272,7 @@ jobs:
 ### Draft Release with Auto-Update
 
 ```yaml
-- uses: LiquidLogicLabs/git-release-action@v1
+- uses: LiquidLogicLabs/git-action-release@v1
   with:
     tag: 'v1.0.0'
     draft: true
@@ -284,7 +284,7 @@ jobs:
 ### Prerelease
 
 ```yaml
-- uses: LiquidLogicLabs/git-release-action@v1
+- uses: LiquidLogicLabs/git-action-release@v1
   with:
     tag: 'v1.0.0-beta.1'
     prerelease: true
@@ -318,7 +318,7 @@ If you're migrating from `ncipollo/release-action`, the action is largely compat
 
 To migrate:
 
-1. Replace `ncipollo/release-action@v1` with `LiquidLogicLabs/git-release-action@v1`
+1. Replace `ncipollo/release-action@v1` with `LiquidLogicLabs/git-action-release@v1`
 2. If using Gitea, add `platform: 'gitea'` and `gitea_url` inputs
 3. All other inputs remain the same
 

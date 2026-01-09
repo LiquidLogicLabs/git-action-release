@@ -10,7 +10,7 @@ import { Logger } from '../../logger';
 import { cleanupRelease, generateTestTag } from './cleanup';
 
 describe('GitHub E2E Tests', () => {
-  const TEST_REPO = process.env.TEST_GITHUB_REPO || 'LiquidLogicLabs/git-release-action-tests';
+  const TEST_REPO = process.env.TEST_GITHUB_REPO || 'LiquidLogicLabs/git-action-release-tests';
   // Use GITHUB_TOKEN from environment (set in TEST environment as TEST_GITHUB_TOKEN)
   const TEST_TOKEN = process.env.GITHUB_TOKEN;
   const [testOwner, testRepo] = TEST_REPO.split('/');
