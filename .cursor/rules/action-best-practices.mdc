@@ -313,7 +313,9 @@ jobs:
 
   test:
     if: github.event_name != 'push' || github.ref_type != 'tag'  # Skip on tag pushes
+    needs: lint  # Tests run after lint
     uses: ./.github/workflows/test.yml
+    # test.yml runs: unit tests + integration tests (all tests except E2E)
 ```
 
 **Full Pattern** (if you need inline steps for Node.js actions):
@@ -388,7 +390,9 @@ permissions:
 
 jobs:
   test:
-    if: github.event_name != 'push' || github.ref_type != 'tag'  # Skip on tag pushes
+    # Always run when called via workflow_call or workflow_dispatch
+    # This workflow only has workflow_call and workflow_dispatch triggers, so it should always run
+    if: github.event_name == 'workflow_call' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -467,6 +471,83 @@ jobs:
 - Easier to maintain and update
 - Ensures tests run consistently in both CI and release processes
 
+### E2E Tests Workflow (.github/workflows/e2e-tests.yml)
+
+**For Node.js Actions:**
+
+Create a reusable E2E tests workflow that runs end-to-end tests with real API calls:
+
+```yaml
+name: E2E Tests
+
+on:
+  workflow_call:  # Called by release workflow
+  workflow_dispatch:  # Manual trigger only
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    # Runs for workflow_call/workflow_dispatch; tag pushes are not used here
+    runs-on: ubuntu-latest
+    environment: TEST
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Run E2E tests
+        env:
+          # GitHub E2E test configuration
+          # Note: GitHub doesn't allow GITHUB_* secrets in environments, so we use TEST_GITHUB_TOKEN
+          # This token is set in TEST environment and provides access to private test repositories
+          TEST_GITHUB_REPO: ${{ vars.TEST_GITHUB_REPO || 'org/repo' }}
+          GITHUB_TOKEN: ${{ secrets.TEST_GITHUB_TOKEN }}
+          # Gitea E2E test configuration (optional)
+          # Note: GitHub doesn't allow GITHUB_* secrets in environments, so we use TEST_GITEA_TOKEN
+          # This token is set in TEST environment and provides access to private test repositories
+          TEST_GITEA_REPO: ${{ vars.TEST_GITEA_REPO || 'owner/repo' }}
+          TEST_GITEA_URL: ${{ vars.TEST_GITEA_URL || 'https://gitea.example.com' }}
+          GITEA_TOKEN: ${{ secrets.TEST_GITEA_TOKEN }}
+        run: npm run test:e2e
+```
+
+**Key Points:**
+
+- **Single TEST environment**: Uses one `TEST` environment for all test secrets/variables
+- **Environment variables**: Uses `vars` for non-sensitive configuration (repositories, URLs)
+- **Environment secrets**: Uses `secrets` for sensitive tokens (TEST_GITHUB_TOKEN, TEST_GITEA_TOKEN)
+- **Token naming**: Uses `TEST_GITHUB_TOKEN` and `TEST_GITEA_TOKEN` instead of `GITHUB_TOKEN` in environment secrets (GitHub doesn't allow GITHUB_* secrets in environments)
+- **Graceful skipping**: E2E tests should gracefully skip if test repositories/tokens are not configured
+- **Real API calls**: E2E tests execute real API calls to verify full integration
+- **Manual triggers**: Supports `workflow_dispatch` for manual testing
+- **Secrets inherit**: When called from release workflow, use `secrets: inherit` to pass repository secrets if needed
+
+**Environment Setup:**
+
+The `TEST` environment should contain:
+
+**Variables:**
+- `TEST_GITHUB_REPO` - Repository in `owner/repo` format (e.g., `org/test-repo`)
+- `TEST_GITEA_REPO` - Repository in `owner/repo` format (optional)
+- `TEST_GITEA_URL` - Gitea base URL (optional)
+
+**Secrets:**
+- `TEST_GITHUB_TOKEN` - GitHub personal access token with `repo` scope
+- `TEST_GITEA_TOKEN` - Gitea personal access token with `repo` scope (optional)
+
 ### Release Workflow (.github/workflows/release.yml)
 
 **For Node.js Actions:**
@@ -499,6 +580,7 @@ jobs:
   e2e-tests:
     needs: ci  # E2E tests run after CI passes
     uses: ./.github/workflows/e2e-tests.yml
+    secrets: inherit
     # e2e-tests.yml runs E2E tests with TEST environment secrets
 
   release:
@@ -551,7 +633,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create GitHub Release
-        uses: ncipollo/release-action@v1
+        uses: LiquidLogicLabs/git-action-release@v1
         with:
           tag: ${{ github.event.inputs.tag || github.ref_name }}
           name: Release ${{ steps.version.outputs.version }}
@@ -668,7 +750,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create GitHub Release
-        uses: ncipollo/release-action@v1
+        uses: LiquidLogicLabs/git-action-release@v1
         with:
           tag: ${{ github.event.inputs.tag || github.ref_name }}
           name: Release ${{ steps.version.outputs.version }}
@@ -696,13 +778,17 @@ jobs:
 - **REQUIRED**: Always run CI and tests before release
   - **For Node.js actions**: Release job should `needs: [ci, e2e-tests]` where `ci` calls `ci.yml` (lint + unit + integration) and `e2e-tests` calls `e2e-tests.yml`
   - **For composite actions**: Release job should `needs: test` where `test` calls `test.yml`
+- **CI Workflow Dependencies**: Test job in `ci.yml` should have `needs: lint` to ensure tests run after linting passes
+- **Secrets Inheritance**: When calling reusable workflows (`ci.yml`, `e2e-tests.yml`), use `secrets: inherit` to pass repository secrets (like `GITHUB_TOKEN`) if needed
 - **For Node.js actions**: Build and package before release (creates `dist/index.js`)
 - **For composite actions**: Validate `action.yml` and shell script syntax before release
 - **Manual Triggers**: All workflows (`ci.yml`, `test.yml`, `e2e-tests.yml`, `release.yml`) should support `workflow_dispatch` for manual triggering
 - **Skip on Tag Pushes**: CI, test, and E2E workflows should use `if: github.event_name != 'push' || github.ref_type != 'tag'` to skip on tag pushes (release workflow handles tag pushes)
 - **CI Workflow**: Should skip on tag pushes using `if: github.event_name != 'push' || github.ref_type != 'tag'` to avoid duplicate runs while still allowing manual triggers (`workflow_dispatch`) and workflow calls (`workflow_call`)
+- **E2E Tests Pattern**: Use single `TEST` environment with `vars` for configuration and `secrets` for tokens; use `TEST_GITHUB_TOKEN` and `TEST_GITEA_TOKEN` (GitHub doesn't allow `GITHUB_*` secrets in environments)
 - **Floating Tags**: Use `LiquidLogicLabs/git-floating-version-tags-action@v1` to create/update major (`v1`), minor (`v1.2`), and `latest` tags for stable releases
 - **Version Validation**: Use `LiquidLogicLabs/git-tag-validate-version-action@v1` for version format validation and component extraction
+- **Release Action**: Use `LiquidLogicLabs/git-action-release@v1` for creating releases (supports GitHub, Gitea, and self-hosted Gitea)
 - **Version Pinning**: Users can pin to `@v1` (major), `@v1.2` (minor), `@latest` (latest stable), or `@v1.2.3` (exact version)
 - **Optional**: Include usage examples in release notes template for better user experience
 - **Optional**: Create package manifest for tracking build metadata
