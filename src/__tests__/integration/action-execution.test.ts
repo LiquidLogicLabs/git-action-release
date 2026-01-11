@@ -80,7 +80,7 @@ describe('Action Execution Integration Tests', () => {
         }
       );
 
-      const platformInfo = PlatformDetector.detect(undefined, undefined, `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}`);
+      const platformInfo = PlatformDetector.detect(undefined, `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}`);
       const provider = new GitHubProvider({
         token: testToken,
         owner: testOwner,
@@ -309,7 +309,8 @@ describe('Action Execution Integration Tests', () => {
 
       mock.setInput('token', testToken);
       mock.setInput('platform', 'gitea');
-      mock.setInput('gitea_url', 'https://git.ravenwolf.org');
+      process.env.GITHUB_SERVER_URL = 'https://git.ravenwolf.org';
+      process.env.GITHUB_REPOSITORY = `${testOwner}/${testRepo}`;
       mock.setInput('tag', 'v1.0.0');
       mock.setInput('name', 'Release v1.0.0');
       mock.setInput('body', 'Release body');
@@ -328,7 +329,7 @@ describe('Action Execution Integration Tests', () => {
         }
       );
 
-      const platformInfo = PlatformDetector.detect('gitea', 'https://git.ravenwolf.org', undefined);
+      const platformInfo = PlatformDetector.detect('gitea');
       const provider = new GiteaProvider({
         token: testToken,
         baseUrl: 'https://git.ravenwolf.org',
@@ -339,7 +340,6 @@ describe('Action Execution Integration Tests', () => {
 
       const inputs: ActionInputs = {
         token: testToken,
-        giteaUrl: 'https://git.ravenwolf.org',
         tag: 'v1.0.0',
         name: 'Release v1.0.0',
         body: 'Release body',
@@ -374,37 +374,40 @@ describe('Action Execution Integration Tests', () => {
       process.env.GITHUB_REPOSITORY = `${testOwner}/${testRepo}`;
       process.env.GITHUB_SERVER_URL = 'https://github.com';
 
-      const result = PlatformDetector.detect(undefined, undefined, `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}`);
+      const result = PlatformDetector.detect(undefined, `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}`);
 
       expect(result.platform).toBe('github');
       expect(result.owner).toBe(testOwner);
       expect(result.repo).toBe(testRepo);
     });
 
-    it('should detect Gitea when explicitly set', () => {
-      const result = PlatformDetector.detect('gitea', 'https://git.ravenwolf.org', undefined);
+    it('should detect Gitea when explicitly set with GITHUB_SERVER_URL', () => {
+      process.env.GITHUB_SERVER_URL = 'https://git.ravenwolf.org';
+      process.env.GITHUB_REPOSITORY = 'owner/repo';
+      const result = PlatformDetector.detect('gitea');
 
       expect(result.platform).toBe('gitea');
       expect(result.baseUrl).toBe('https://git.ravenwolf.org');
+      expect(result.owner).toBe('owner');
+      expect(result.repo).toBe('repo');
     });
 
-    it('should detect Gitea from URL when repository URL matches giteaUrl base', () => {
-      // When repositoryUrl is provided and matches the giteaUrl base, owner/repo are extracted
-      // If we pass repositoryUrl as the full URL with owner/repo, and giteaUrl matches the base
-      // detectFromUrl checks if giteaUrl is set and if the repo URL host matches
-      const result = PlatformDetector.detect(undefined, 'https://git.ravenwolf.org', 'https://git.ravenwolf.org/owner/repo');
+    it('should detect Gitea from repository URL when auto-detecting with gitea.io domain', () => {
+      // Auto-detect Gitea from gitea.io repository URL
+      const result = PlatformDetector.detect(undefined, 'https://gitea.io/owner/repo');
 
       expect(result.platform).toBe('gitea');
+      expect(result.baseUrl).toBe('https://gitea.io');
+      expect(result.owner).toBe('owner');
+      expect(result.repo).toBe('repo');
+    });
+
+    it('should detect Gitea when explicitly set with repository URL', () => {
+      const result = PlatformDetector.detect('gitea', 'https://git.ravenwolf.org/owner/repo');
+      expect(result.platform).toBe('gitea');
       expect(result.baseUrl).toBe('https://git.ravenwolf.org');
-      // The detectFromUrl logic checks if giteaUrl is set, then uses parseGiteaUrl with repositoryUrl
-      // parseGiteaUrl will extract owner/repo from the repositoryUrl path
-      // However, detectFromUrl uses giteaUrl if set, not repositoryUrl
-      // So we test with explicit platform instead
-      const explicitResult = PlatformDetector.detect('gitea', undefined, 'https://git.ravenwolf.org/owner/repo');
-      expect(explicitResult.platform).toBe('gitea');
-      expect(explicitResult.baseUrl).toBe('https://git.ravenwolf.org');
-      expect(explicitResult.owner).toBe('owner');
-      expect(explicitResult.repo).toBe('repo');
+      expect(result.owner).toBe('owner');
+      expect(result.repo).toBe('repo');
     });
   });
 });

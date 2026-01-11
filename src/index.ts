@@ -37,7 +37,6 @@ async function run(): Promise<void> {
     // Detect platform
     const platformInfo = PlatformDetector.detect(
       inputs.platform,
-      inputs.giteaUrl,
       repositoryUrl
     );
 
@@ -69,7 +68,6 @@ async function run(): Promise<void> {
 function getInputs(): ActionInputs {
   return {
     platform: core.getInput('platform') || undefined,
-    giteaUrl: core.getInput('gitea_url') || undefined,
     token: core.getInput('token') || process.env.GITHUB_TOKEN || '',
     tag: core.getInput('tag') || '',
     name: core.getInput('name') || undefined,
@@ -114,7 +112,7 @@ function createProvider(
 
   if (platformInfo.platform === 'gitea') {
     if (!platformInfo.baseUrl) {
-      throw new Error('Gitea baseUrl is required. Provide gitea_url input or ensure it can be detected from repository URL.');
+      throw new Error('Gitea baseUrl is required. Ensure GITHUB_SERVER_URL environment variable is set or repository URL is provided.');
     }
 
     return new GiteaProvider({

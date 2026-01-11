@@ -15,7 +15,7 @@ export declare class PlatformDetector {
     /**
      * Detect platform from explicit input or auto-detect
      */
-    static detect(explicitPlatform?: string, giteaUrl?: string, repositoryUrl?: string): PlatformInfo;
+    static detect(explicitPlatform?: string, repositoryUrl?: string): PlatformInfo;
     /**
      * Detect platform with explicit platform type
      */

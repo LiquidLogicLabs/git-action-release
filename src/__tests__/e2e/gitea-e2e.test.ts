@@ -134,7 +134,6 @@ describe('Gitea E2E Tests', () => {
 
     const inputs: ActionInputs = {
       token: TEST_TOKEN,
-      giteaUrl: TEST_GITEA_URL,
       tag: testTag,
       name: `E2E Test Release via Manager ${testTag}`,
       body: 'Release created via ReleaseManager',

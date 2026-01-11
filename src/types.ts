@@ -102,7 +102,6 @@ export interface IProvider {
  */
 export interface ActionInputs {
   platform?: string;
-  giteaUrl?: string;
   token: string;
   tag: string;
   name?: string;

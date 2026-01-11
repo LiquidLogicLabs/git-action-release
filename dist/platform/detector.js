@@ -42,19 +42,21 @@ class PlatformDetector {
     /**
      * Detect platform from explicit input or auto-detect
      */
-    static detect(explicitPlatform, giteaUrl, repositoryUrl) {
+    static detect(explicitPlatform, repositoryUrl) {
         // If platform is explicitly set, use it
         if (explicitPlatform) {
             const platform = explicitPlatform.toLowerCase().trim();
             if (platform === 'github' || platform === 'gitea') {
-                return this.detectWithPlatform(platform, giteaUrl, repositoryUrl);
+                return this.detectWithPlatform(platform, repositoryUrl);
             }
             throw new Error(`Invalid platform: ${explicitPlatform}. Supported platforms: github, gitea`);
         }
         // Auto-detect from repository URL
-        const repoUrl = repositoryUrl || process.env.GITHUB_SERVER_URL + '/' + process.env.GITHUB_REPOSITORY;
+        const repoUrl = repositoryUrl || (process.env.GITHUB_SERVER_URL && process.env.GITHUB_REPOSITORY
+            ? `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}`
+            : undefined);
         if (repoUrl) {
-            return this.detectFromUrl(repoUrl, giteaUrl);
+            return this.detectFromUrl(repoUrl);
         }
         // Default to GitHub for GitHub Actions runners
         core.warning('Could not detect platform from repository URL, defaulting to GitHub');
@@ -63,20 +65,30 @@ class PlatformDetector {
     /**
      * Detect platform with explicit platform type
      */
-    static detectWithPlatform(platform, giteaUrl, repositoryUrl) {
+    static detectWithPlatform(platform, repositoryUrl) {
         if (platform === 'gitea') {
-            if (!giteaUrl && !repositoryUrl) {
-                throw new Error('gitea_url is required when platform is set to gitea');
+            // If repository URL is explicitly provided, use it (takes priority over environment variable)
+            if (repositoryUrl) {
+                return this.parseGiteaUrl(repositoryUrl);
             }
-            const url = giteaUrl || repositoryUrl || '';
-            return this.parseGiteaUrl(url);
+            // Otherwise, use GITHUB_SERVER_URL from environment if available
+            const baseUrl = process.env.GITHUB_SERVER_URL;
+            if (baseUrl) {
+                return {
+                    platform: 'gitea',
+                    baseUrl: baseUrl,
+                    owner: process.env.GITHUB_REPOSITORY?.split('/')[0],
+                    repo: process.env.GITHUB_REPOSITORY?.split('/')[1],
+                };
+            }
+            throw new Error('Gitea URL could not be detected. Ensure GITHUB_SERVER_URL environment variable is set or provide a repository URL.');
         }
         return { platform: 'github' };
     }
     /**
      * Detect platform from repository URL
      */
-    static detectFromUrl(repoUrl, giteaUrl) {
+    static detectFromUrl(repoUrl) {
         try {
             const url = new URL(repoUrl);
             // Check if it's GitHub (github.com or GitHub Enterprise)
@@ -92,12 +104,14 @@ class PlatformDetector {
                 return { platform: 'github' };
             }
             // Check if it's Gitea (gitea.io or custom domain)
-            if (url.hostname.endsWith('.gitea.io') || url.hostname.includes('gitea') || giteaUrl) {
-                return this.parseGiteaUrl(giteaUrl || repoUrl);
+            // For Gitea, extract base URL from the repository URL
+            if (url.hostname.endsWith('.gitea.io') || url.hostname.includes('gitea')) {
+                return this.parseGiteaUrl(repoUrl);
             }
-            // If custom Gitea URL is provided, use it
-            if (giteaUrl) {
-                return this.parseGiteaUrl(giteaUrl);
+            // Try using GITHUB_SERVER_URL if it's set (could be a custom Gitea instance)
+            const serverUrl = process.env.GITHUB_SERVER_URL;
+            if (serverUrl && url.hostname === new URL(serverUrl).hostname) {
+                return this.parseGiteaUrl(repoUrl);
             }
             // Default to GitHub
             core.warning(`Could not detect platform from URL: ${repoUrl}, defaulting to GitHub`);

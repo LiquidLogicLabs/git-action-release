@@ -76,7 +76,6 @@ jobs:
       - uses: LiquidLogicLabs/git-action-release@v1
         with:
           platform: 'gitea'
-          gitea_url: 'https://gitea.example.com'
           tag: ${{ github.ref_name }}
           token: ${{ secrets.GITEA_TOKEN }}
 ```
@@ -119,7 +118,6 @@ jobs:
 | Input | Description | Required | Default |
 |-------|-------------|----------|---------|
 | `platform` | Platform type (`github` or `gitea`). If not provided, will auto-detect from repository URL | No | Auto-detect |
-| `gitea_url` | Gitea base URL (e.g., `https://gitea.example.com`) or repository URL (e.g., `https://gitea.example.com/owner/repo`). Required for self-hosted Gitea | No | - |
 | `token` | Platform token for authentication | No | `${{ github.token }}` |
 
 ### Release Configuration
@@ -261,7 +259,6 @@ jobs:
       - uses: LiquidLogicLabs/git-action-release@v1
         with:
           platform: 'gitea'
-          gitea_url: 'https://gitea.example.com'
           tag: ${{ github.ref_name }}
           name: Release ${{ github.ref_name }}
           bodyFile: CHANGELOG.md
@@ -304,8 +301,7 @@ jobs:
 
 - Supports most features except automatic release notes generation (Gitea API doesn't support this)
 - Uses Gitea API v1
-- For self-hosted instances, provide the base URL via `gitea_url` input
-- Accepts either base URL (`https://gitea.example.com`) or repository URL (`https://gitea.example.com/owner/repo`)
+- Automatically detects Gitea URL from `GITHUB_SERVER_URL` environment variable (available in Gitea Actions)
 - Requires repository access token with release permissions
 
 ## Migration from ncipollo/release-action
@@ -314,12 +310,12 @@ If you're migrating from `ncipollo/release-action`, the action is largely compat
 
 1. **Platform Detection**: The action now auto-detects the platform, but you can override it
 2. **Gitea Support**: Added support for Gitea and self-hosted Gitea instances
-3. **Additional Input**: `platform` and `gitea_url` inputs for multi-platform support
+3. **Additional Input**: `platform` input for multi-platform support
 
 To migrate:
 
 1. Replace `ncipollo/release-action@v1` with `LiquidLogicLabs/git-action-release@v1`
-2. If using Gitea, add `platform: 'gitea'` and `gitea_url` inputs
+2. If using Gitea, add `platform: 'gitea'` input (Gitea URL is auto-detected from environment)
 3. All other inputs remain the same
 
 ## Security
@@ -343,7 +339,7 @@ platform: 'github'  # or 'gitea'
 
 For self-hosted Gitea instances:
 
-1. Ensure `gitea_url` is correct (base URL or repository URL)
+1. Ensure `GITHUB_SERVER_URL` environment variable is set correctly (this is automatically set by Gitea Actions)
 2. Verify the token has release permissions
 3. Check network connectivity from the runner to your Gitea instance
 

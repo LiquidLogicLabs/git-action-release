@@ -20,22 +20,23 @@ export class PlatformDetector {
    */
   static detect(
     explicitPlatform?: string,
-    giteaUrl?: string,
     repositoryUrl?: string
   ): PlatformInfo {
     // If platform is explicitly set, use it
     if (explicitPlatform) {
       const platform = explicitPlatform.toLowerCase().trim();
       if (platform === 'github' || platform === 'gitea') {
-        return this.detectWithPlatform(platform as Platform, giteaUrl, repositoryUrl);
+        return this.detectWithPlatform(platform as Platform, repositoryUrl);
       }
       throw new Error(`Invalid platform: ${explicitPlatform}. Supported platforms: github, gitea`);
     }
 
     // Auto-detect from repository URL
-    const repoUrl = repositoryUrl || process.env.GITHUB_SERVER_URL + '/' + process.env.GITHUB_REPOSITORY;
+    const repoUrl = repositoryUrl || (process.env.GITHUB_SERVER_URL && process.env.GITHUB_REPOSITORY
+      ? `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}`
+      : undefined);
     if (repoUrl) {
-      return this.detectFromUrl(repoUrl, giteaUrl);
+      return this.detectFromUrl(repoUrl);
     }
 
     // Default to GitHub for GitHub Actions runners
@@ -48,16 +49,26 @@ export class PlatformDetector {
    */
   private static detectWithPlatform(
     platform: Platform,
-    giteaUrl?: string,
     repositoryUrl?: string
   ): PlatformInfo {
     if (platform === 'gitea') {
-      if (!giteaUrl && !repositoryUrl) {
-        throw new Error('gitea_url is required when platform is set to gitea');
+      // If repository URL is explicitly provided, use it (takes priority over environment variable)
+      if (repositoryUrl) {
+        return this.parseGiteaUrl(repositoryUrl);
       }
 
-      const url = giteaUrl || repositoryUrl || '';
-      return this.parseGiteaUrl(url);
+      // Otherwise, use GITHUB_SERVER_URL from environment if available
+      const baseUrl = process.env.GITHUB_SERVER_URL;
+      if (baseUrl) {
+        return {
+          platform: 'gitea',
+          baseUrl: baseUrl,
+          owner: process.env.GITHUB_REPOSITORY?.split('/')[0],
+          repo: process.env.GITHUB_REPOSITORY?.split('/')[1],
+        };
+      }
+
+      throw new Error('Gitea URL could not be detected. Ensure GITHUB_SERVER_URL environment variable is set or provide a repository URL.');
     }
 
     return { platform: 'github' };
@@ -66,7 +77,7 @@ export class PlatformDetector {
   /**
    * Detect platform from repository URL
    */
-  private static detectFromUrl(repoUrl: string, giteaUrl?: string): PlatformInfo {
+  private static detectFromUrl(repoUrl: string): PlatformInfo {
     try {
       const url = new URL(repoUrl);
 
@@ -84,13 +95,15 @@ export class PlatformDetector {
       }
 
       // Check if it's Gitea (gitea.io or custom domain)
-      if (url.hostname.endsWith('.gitea.io') || url.hostname.includes('gitea') || giteaUrl) {
-        return this.parseGiteaUrl(giteaUrl || repoUrl);
+      // For Gitea, extract base URL from the repository URL
+      if (url.hostname.endsWith('.gitea.io') || url.hostname.includes('gitea')) {
+        return this.parseGiteaUrl(repoUrl);
       }
 
-      // If custom Gitea URL is provided, use it
-      if (giteaUrl) {
-        return this.parseGiteaUrl(giteaUrl);
+      // Try using GITHUB_SERVER_URL if it's set (could be a custom Gitea instance)
+      const serverUrl = process.env.GITHUB_SERVER_URL;
+      if (serverUrl && url.hostname === new URL(serverUrl).hostname) {
+        return this.parseGiteaUrl(repoUrl);
       }
 
       // Default to GitHub

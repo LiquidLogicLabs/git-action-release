@@ -6,10 +6,6 @@ inputs:
     description: 'Platform type (github|gitea). If not provided, will auto-detect from repository URL'
     required: false
     default: ''
-  gitea_url:
-    description: 'Gitea base URL (e.g., https://gitea.example.com) or repository URL (e.g., https://gitea.example.com/owner/repo). Required for self-hosted Gitea'
-    required: false
-    default: ''
   token:
     description: 'Platform token for authentication. Defaults to GITHUB_TOKEN'
     required: false
