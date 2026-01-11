@@ -28,7 +28,10 @@
     "test:act:release-dispatch": "act workflow_dispatch --eventpath .github/workflows/.act/event-workflow-dispatch-release.json -W .github/workflows/release.yml",
     "test:act:ci-dispatch": "act workflow_dispatch --eventpath .github/workflows/.act/event-workflow-dispatch-ci.json -W .github/workflows/ci.yml",
     "test:act:test-call": "act workflow_call --eventpath .github/workflows/.act/event-workflow_call.json -W .github/workflows/test.yml",
-    "test:act:e2e-call": "act workflow_call --eventpath .github/workflows/.act/event-workflow_call.json -W .github/workflows/e2e-tests.yml"
+    "test:act:e2e-call": "act workflow_call --eventpath .github/workflows/.act/event-workflow_call.json -W .github/workflows/e2e-tests.yml",
+    "release:patch": "npm version patch && git push && git push --tags",
+    "release:minor": "npm version minor && git push && git push --tags",
+    "release:major": "npm version major && git push && git push --tags"
   },
   "keywords": [
     "github-actions",
