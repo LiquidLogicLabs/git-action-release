@@ -5,15 +5,24 @@ on:
   workflow_dispatch:  # Manual trigger only
 
 permissions:
-  contents: read
+  contents: write  # Required to create tags and releases
 
 jobs:
   e2e:
-    # Runs for workflow_call/workflow_dispatch; tag pushes are not used here
     runs-on: ubuntu-latest
     environment: TEST
+    strategy:
+      matrix:
+        include:
+          - platform: github
+            repo: ${{ vars.TEST_GITHUB_REPO || 'LiquidLogicLabs/git-action-release-tests' }}
+          - platform: gitea
+            repo: ${{ vars.TEST_GITEA_REPO || 'https://git.ravenwolf.org/l3io/git-action-release-tests' }}
+      fail-fast: false  # Continue testing other platforms if one fails
+    env:
+      TEST_TOKEN: ${{ matrix.platform == 'github' && secrets.TEST_GITHUB_TOKEN || secrets.TEST_GITEA_TOKEN }}
     steps:
-      - name: Checkout code
+      - name: Checkout action code
         uses: actions/checkout@v4
 
       - name: Setup Node.js
@@ -25,20 +34,109 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build
+      - name: Build action
         run: npm run build
 
-      - name: Run E2E tests
+      - name: Setup Go (Gitea only)
+        if: matrix.platform == 'gitea'
+        uses: actions/setup-go@v5
+        with:
+          go-version: 'stable'
+
+      - name: Install Tea CLI (Gitea only)
+        if: matrix.platform == 'gitea'
+        run: |
+          # Install Tea CLI using Go (much simpler than downloading binary)
+          echo "Installing Tea CLI using Go..."
+          go install code.gitea.io/tea@latest
+          
+          # Verify installation
+          echo "Verifying installation..."
+          ~/go/bin/tea --version || $(go env GOPATH)/bin/tea --version
+
+      - name: Generate unique test tag
+        id: test_tag
+        run: |
+          TEST_TAG="test-e2e-${{ matrix.platform }}-${{ github.run_id }}-${{ github.run_attempt }}-$(date +%s)"
+          echo "tag=$TEST_TAG" >> $GITHUB_OUTPUT
+          echo "Generated test tag: $TEST_TAG"
+
+      - name: Test - Create release
+        id: create_release
+        uses: ./
+        with:
+          token: ${{ env.TEST_TOKEN }}
+          platform: ${{ matrix.platform }}
+          repository: ${{ matrix.repo }}
+          tag: ${{ steps.test_tag.outputs.tag }}
+          name: E2E Test Release ${{ steps.test_tag.outputs.tag }}
+          body: This is a test release created by E2E tests
+          verbose: true
+
+      - name: Verify release outputs
+        run: |
+          if [ -z "${{ steps.create_release.outputs.id }}" ]; then
+            echo "❌ Release ID is missing"
+            exit 1
+          fi
+          if [ -z "${{ steps.create_release.outputs.html_url }}" ]; then
+            echo "❌ Release HTML URL is missing"
+            exit 1
+          fi
+          echo "✅ Release created successfully"
+          echo "  ID: ${{ steps.create_release.outputs.id }}"
+          echo "  URL: ${{ steps.create_release.outputs.html_url }}"
+
+      - name: Test - Update release
+        id: update_release
+        uses: ./
+        with:
+          token: ${{ env.TEST_TOKEN }}
+          platform: ${{ matrix.platform }}
+          repository: ${{ matrix.repo }}
+          tag: ${{ steps.test_tag.outputs.tag }}
+          name: E2E Test Release Updated ${{ steps.test_tag.outputs.tag }}
+          body: This release has been updated by E2E tests
+          allowUpdates: true
+
+      - name: Verify update outputs
+        run: |
+          if [ "${{ steps.update_release.outputs.id }}" != "${{ steps.create_release.outputs.id }}" ]; then
+            echo "❌ Release ID changed during update (expected same ID)"
+            exit 1
+          fi
+          echo "✅ Release updated successfully"
+
+      - name: Configure Tea CLI (Gitea only)
+        if: matrix.platform == 'gitea'
+        run: |
+          # Extract base URL and owner/repo from full repository URL
+          REPO_URL="${{ matrix.repo }}"
+          GITEA_BASE_URL=$(echo "$REPO_URL" | sed -E 's|^https?://([^/]+).*|\1|')
+          GITEA_BASE_URL="https://${GITEA_BASE_URL}"
+          echo "Configuring Tea CLI for ${GITEA_BASE_URL}"
+          # Configure Tea CLI login non-interactively
+          tea login add --name gitea --url "${GITEA_BASE_URL}" --token "${{ env.TEST_TOKEN }}" || true
+
+      - name: Cleanup - Delete release
+        if: always()
+        run: |
+          if [ "${{ matrix.platform }}" == "github" ]; then
+            # GitHub cleanup using GitHub CLI
+            REPO="${{ matrix.repo }}"
+            gh release delete "${{ steps.test_tag.outputs.tag }}" --repo "$REPO" --yes || true
+            gh api -X DELETE "/repos/$REPO/git/refs/tags/${{ steps.test_tag.outputs.tag }}" || true
+          else
+            # Gitea cleanup using Tea CLI
+            # Extract owner/repo from full repository URL
+            REPO_URL="${{ matrix.repo }}"
+            REPO=$(echo "$REPO_URL" | sed -E 's|^https?://[^/]+/(.+)|\1|')
+            TAG="${{ steps.test_tag.outputs.tag }}"
+            
+            echo "Deleting Gitea release: ${TAG} from ${REPO}"
+            # Delete release and tag using Tea CLI
+            tea release delete "${TAG}" --confirm --delete-tag --repo "${REPO}" || true
+            echo "✅ Cleaned up Gitea release: ${TAG}"
+          fi
         env:
-          # GitHub E2E test configuration
-          # Note: GitHub doesn't allow GITHUB_* secrets in environments, so we use TEST_GITHUB_TOKEN
-          # This token is set in TEST environment and provides access to private test repositories
-          TEST_GITHUB_REPO: ${{ vars.TEST_GITHUB_REPO || 'LiquidLogicLabs/git-action-release-tests' }}
-          GITHUB_TOKEN: ${{ secrets.TEST_GITHUB_TOKEN }}
-          # Gitea E2E test configuration
-          # Note: GitHub doesn't allow GITHUB_* secrets in environments, so we use TEST_GITEA_TOKEN
-          # This token is set in TEST environment and provides access to private test repositories
-          TEST_GITEA_REPO: ${{ vars.TEST_GITEA_REPO || 'l3io/git-action-release-tests' }}
-          TEST_GITEA_URL: ${{ vars.TEST_GITEA_URL || 'https://git.ravenwolf.org' }}
-          GITEA_TOKEN: ${{ secrets.TEST_GITEA_TOKEN }}
-        run: npm run test:e2e
+          GITHUB_TOKEN: ${{ matrix.platform == 'github' && env.TEST_TOKEN || '' }}
