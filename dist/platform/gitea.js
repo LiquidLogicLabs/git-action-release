@@ -53,6 +53,7 @@ class GiteaProvider extends provider_1.BaseProvider {
         this.apiBaseUrl = config.baseUrl.replace(/\/api\/v1\/?$/, '') + '/api/v1';
         this.owner = config.owner || process.env.GITHUB_REPOSITORY_OWNER || '';
         this.repo = config.repo || this.extractRepoFromEnv() || '';
+        config.logger.debug(`GiteaProvider initialized - baseUrl: ${config.baseUrl}, apiBaseUrl: ${this.apiBaseUrl}, owner: ${this.owner}, repo: ${this.repo}`);
         if (!this.owner || !this.repo) {
             throw new Error('Gitea owner and repo must be provided or available from environment');
         }
@@ -136,9 +137,12 @@ class GiteaProvider extends provider_1.BaseProvider {
      */
     async getReleaseByTag(tag) {
         this.logger.debug(`Getting Gitea release by tag: ${tag}`);
+        this.logger.debug(`getReleaseByTag - apiBaseUrl: ${this.apiBaseUrl}, owner: ${this.owner}, repo: ${this.repo}, tag: ${tag}`);
         try {
             // Gitea API uses tag name in the path
             const url = `${this.apiBaseUrl}/repos/${this.owner}/${this.repo}/releases/tags/${tag}`;
+            this.logger.debug(`Gitea API URL: ${url}`);
+            this.logger.debug(`getReleaseByTag - Full URL components: apiBaseUrl=${this.apiBaseUrl}, owner=${this.owner}, repo=${this.repo}, tag=${tag}`);
             const { data } = await this.request(url, {
                 method: 'GET',
             });
@@ -281,12 +285,18 @@ class GiteaProvider extends provider_1.BaseProvider {
         if (options.body instanceof FormData) {
             delete headers['Content-Type'];
         }
+        this.logger.debug(`Gitea request URL: ${url}`);
+        this.logger.debug(`Gitea request method: ${options.method || 'GET'}`);
+        this.logger.debug(`Gitea request headers: ${JSON.stringify(Object.keys(headers).map(k => `${k}: ${k === 'Authorization' ? 'token ***' : headers[k]}`))}`);
         const response = await fetch(url, {
             ...options,
             headers,
         });
+        this.logger.debug(`Gitea response status: ${response.status} ${response.statusText}`);
+        this.logger.debug(`Gitea response headers: ${JSON.stringify(Object.fromEntries(response.headers.entries()))}`);
         if (!response.ok) {
             const errorText = await response.text().catch(() => response.statusText);
+            this.logger.debug(`Gitea error response: ${errorText.substring(0, 500)}`);
             throw new Error(`HTTP ${response.status} ${response.statusText}: ${errorText}`);
         }
         const data = response.status === 204 ? {} : (await response.json());

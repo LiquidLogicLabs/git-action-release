@@ -1,0 +1,8 @@
+# GitHub test repository (owner/repo)
+TEST_GITHUB_REPO=LiquidLogicLabs/git-action-release-tests
+
+# Gitea test repository (full URL for act compatibility)
+TEST_GITEA_REPO=https://git.ravenwolf.org/l3io/git-action-release-tests
+
+# Gitea base URL (for self-hosted)
+TEST_GITEA_URL=https://git.ravenwolf.org

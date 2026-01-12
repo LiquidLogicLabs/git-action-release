@@ -5,6 +5,7 @@ import { GitHubProvider } from './platform/github';
 import { GiteaProvider } from './platform/gitea';
 import { ReleaseManager } from './release';
 import { ActionInputs, IProvider } from './types';
+import { parseRepository } from './utils/repository';
 
 /**
  * Main entry point for the action
@@ -29,10 +30,24 @@ async function run(): Promise<void> {
     const inputs = getInputs();
     logger.debug(`Platform: ${inputs.platform || 'auto-detect'}`);
 
-    // Get repository URL from environment
-    const repositoryUrl = process.env.GITHUB_SERVER_URL && process.env.GITHUB_REPOSITORY
-      ? `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}`
-      : undefined;
+    // Get repository URL from environment or repository input
+    logger.debug(`GITHUB_SERVER_URL: ${process.env.GITHUB_SERVER_URL || 'not set'}`);
+    logger.debug(`GITHUB_REPOSITORY: ${process.env.GITHUB_REPOSITORY || 'not set'}`);
+    
+    // If repository input is provided and it's a full URL (for Gitea), use it directly
+    // Otherwise, construct repository URL from environment
+    let repositoryUrl: string | undefined;
+    if (inputs.repository && (inputs.repository.startsWith('http://') || inputs.repository.startsWith('https://'))) {
+      // Repository input is a full URL - use it directly for PlatformDetector
+      repositoryUrl = inputs.repository;
+      logger.debug(`repositoryUrl (from repository input URL): ${repositoryUrl}`);
+    } else if (process.env.GITHUB_SERVER_URL && process.env.GITHUB_REPOSITORY) {
+      // Fall back to environment-based repository URL
+      repositoryUrl = `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}`;
+      logger.debug(`repositoryUrl (from environment): ${repositoryUrl}`);
+    }
+    
+    logger.debug(`repositoryUrl: ${repositoryUrl || 'not set'}`);
 
     // Detect platform
     const platformInfo = PlatformDetector.detect(
@@ -86,6 +101,7 @@ function getInputs(): ActionInputs {
     updateOnlyUnreleased: core.getBooleanInput('updateOnlyUnreleased'),
     generateReleaseNotes: core.getBooleanInput('generateReleaseNotes'),
     generateReleaseNotesPreviousTag: core.getInput('generateReleaseNotesPreviousTag') || undefined,
+    repository: core.getInput('repository') || undefined,
     owner: core.getInput('owner') || undefined,
     repo: core.getInput('repo') || undefined,
     omitBody: core.getBooleanInput('omitBody'),
@@ -107,8 +123,28 @@ function createProvider(
   inputs: ActionInputs,
   logger: Logger
 ): IProvider {
-  const owner = inputs.owner || platformInfo.owner || process.env.GITHUB_REPOSITORY_OWNER || '';
-  const repo = inputs.repo || platformInfo.repo || extractRepoFromEnv() || '';
+  // Parse repository input if provided (takes precedence over owner/repo inputs)
+  let owner = '';
+  let repo = '';
+
+  if (inputs.repository) {
+    // If repository input is a full URL, owner/repo should already be in platformInfo from PlatformDetector
+    // Otherwise, use parseRepository for owner/repo format
+    if (inputs.repository.startsWith('http://') || inputs.repository.startsWith('https://')) {
+      // Full URL - owner/repo should already be in platformInfo from PlatformDetector.parseGiteaUrl
+      owner = platformInfo.owner || '';
+      repo = platformInfo.repo || '';
+    } else {
+      // Owner/repo format - parse it directly
+      const parsed = parseRepository(inputs.repository);
+      owner = parsed.owner;
+      repo = parsed.repo;
+    }
+  } else {
+    // Fall back to owner/repo inputs or auto-detection
+    owner = inputs.owner || platformInfo.owner || process.env.GITHUB_REPOSITORY_OWNER || '';
+    repo = inputs.repo || platformInfo.repo || extractRepoFromEnv() || '';
+  }
 
   if (platformInfo.platform === 'gitea') {
     if (!platformInfo.baseUrl) {

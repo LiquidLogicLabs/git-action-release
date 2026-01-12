@@ -25968,6 +25968,7 @@ const detector_1 = __nccwpck_require__(69);
 const github_1 = __nccwpck_require__(5952);
 const gitea_1 = __nccwpck_require__(5517);
 const release_1 = __nccwpck_require__(4202);
+const repository_1 = __nccwpck_require__(6629);
 /**
  * Main entry point for the action
  */
@@ -25988,10 +25989,23 @@ async function run() {
         // Get inputs
         const inputs = getInputs();
         logger.debug(`Platform: ${inputs.platform || 'auto-detect'}`);
-        // Get repository URL from environment
-        const repositoryUrl = process.env.GITHUB_SERVER_URL && process.env.GITHUB_REPOSITORY
-            ? `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}`
-            : undefined;
+        // Get repository URL from environment or repository input
+        logger.debug(`GITHUB_SERVER_URL: ${process.env.GITHUB_SERVER_URL || 'not set'}`);
+        logger.debug(`GITHUB_REPOSITORY: ${process.env.GITHUB_REPOSITORY || 'not set'}`);
+        // If repository input is provided and it's a full URL (for Gitea), use it directly
+        // Otherwise, construct repository URL from environment
+        let repositoryUrl;
+        if (inputs.repository && (inputs.repository.startsWith('http://') || inputs.repository.startsWith('https://'))) {
+            // Repository input is a full URL - use it directly for PlatformDetector
+            repositoryUrl = inputs.repository;
+            logger.debug(`repositoryUrl (from repository input URL): ${repositoryUrl}`);
+        }
+        else if (process.env.GITHUB_SERVER_URL && process.env.GITHUB_REPOSITORY) {
+            // Fall back to environment-based repository URL
+            repositoryUrl = `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}`;
+            logger.debug(`repositoryUrl (from environment): ${repositoryUrl}`);
+        }
+        logger.debug(`repositoryUrl: ${repositoryUrl || 'not set'}`);
         // Detect platform
         const platformInfo = detector_1.PlatformDetector.detect(inputs.platform, repositoryUrl);
         logger.info(`Detected platform: ${platformInfo.platform}`);
@@ -26037,6 +26051,7 @@ function getInputs() {
         updateOnlyUnreleased: core.getBooleanInput('updateOnlyUnreleased'),
         generateReleaseNotes: core.getBooleanInput('generateReleaseNotes'),
         generateReleaseNotesPreviousTag: core.getInput('generateReleaseNotesPreviousTag') || undefined,
+        repository: core.getInput('repository') || undefined,
         owner: core.getInput('owner') || undefined,
         repo: core.getInput('repo') || undefined,
         omitBody: core.getBooleanInput('omitBody'),
@@ -26052,8 +26067,29 @@ function getInputs() {
  * Create provider based on platform info
  */
 function createProvider(platformInfo, token, inputs, logger) {
-    const owner = inputs.owner || platformInfo.owner || process.env.GITHUB_REPOSITORY_OWNER || '';
-    const repo = inputs.repo || platformInfo.repo || extractRepoFromEnv() || '';
+    // Parse repository input if provided (takes precedence over owner/repo inputs)
+    let owner = '';
+    let repo = '';
+    if (inputs.repository) {
+        // If repository input is a full URL, owner/repo should already be in platformInfo from PlatformDetector
+        // Otherwise, use parseRepository for owner/repo format
+        if (inputs.repository.startsWith('http://') || inputs.repository.startsWith('https://')) {
+            // Full URL - owner/repo should already be in platformInfo from PlatformDetector.parseGiteaUrl
+            owner = platformInfo.owner || '';
+            repo = platformInfo.repo || '';
+        }
+        else {
+            // Owner/repo format - parse it directly
+            const parsed = (0, repository_1.parseRepository)(inputs.repository);
+            owner = parsed.owner;
+            repo = parsed.repo;
+        }
+    }
+    else {
+        // Fall back to owner/repo inputs or auto-detection
+        owner = inputs.owner || platformInfo.owner || process.env.GITHUB_REPOSITORY_OWNER || '';
+        repo = inputs.repo || platformInfo.repo || extractRepoFromEnv() || '';
+    }
     if (platformInfo.platform === 'gitea') {
         if (!platformInfo.baseUrl) {
             throw new Error('Gitea baseUrl is required. Ensure GITHUB_SERVER_URL environment variable is set or repository URL is provided.');
@@ -26400,6 +26436,7 @@ class GiteaProvider extends provider_1.BaseProvider {
         this.apiBaseUrl = config.baseUrl.replace(/\/api\/v1\/?$/, '') + '/api/v1';
         this.owner = config.owner || process.env.GITHUB_REPOSITORY_OWNER || '';
         this.repo = config.repo || this.extractRepoFromEnv() || '';
+        config.logger.debug(`GiteaProvider initialized - baseUrl: ${config.baseUrl}, apiBaseUrl: ${this.apiBaseUrl}, owner: ${this.owner}, repo: ${this.repo}`);
         if (!this.owner || !this.repo) {
             throw new Error('Gitea owner and repo must be provided or available from environment');
         }
@@ -26483,9 +26520,12 @@ class GiteaProvider extends provider_1.BaseProvider {
      */
     async getReleaseByTag(tag) {
         this.logger.debug(`Getting Gitea release by tag: ${tag}`);
+        this.logger.debug(`getReleaseByTag - apiBaseUrl: ${this.apiBaseUrl}, owner: ${this.owner}, repo: ${this.repo}, tag: ${tag}`);
         try {
             // Gitea API uses tag name in the path
             const url = `${this.apiBaseUrl}/repos/${this.owner}/${this.repo}/releases/tags/${tag}`;
+            this.logger.debug(`Gitea API URL: ${url}`);
+            this.logger.debug(`getReleaseByTag - Full URL components: apiBaseUrl=${this.apiBaseUrl}, owner=${this.owner}, repo=${this.repo}, tag=${tag}`);
             const { data } = await this.request(url, {
                 method: 'GET',
             });
@@ -26628,12 +26668,18 @@ class GiteaProvider extends provider_1.BaseProvider {
         if (options.body instanceof FormData) {
             delete headers['Content-Type'];
         }
+        this.logger.debug(`Gitea request URL: ${url}`);
+        this.logger.debug(`Gitea request method: ${options.method || 'GET'}`);
+        this.logger.debug(`Gitea request headers: ${JSON.stringify(Object.keys(headers).map(k => `${k}: ${k === 'Authorization' ? 'token ***' : headers[k]}`))}`);
         const response = await fetch(url, {
             ...options,
             headers,
         });
+        this.logger.debug(`Gitea response status: ${response.status} ${response.statusText}`);
+        this.logger.debug(`Gitea response headers: ${JSON.stringify(Object.fromEntries(response.headers.entries()))}`);
         if (!response.ok) {
             const errorText = await response.text().catch(() => response.statusText);
+            this.logger.debug(`Gitea error response: ${errorText.substring(0, 500)}`);
             throw new Error(`HTTP ${response.status} ${response.statusText}: ${errorText}`);
         }
         const data = response.status === 204 ? {} : (await response.json());
@@ -27381,6 +27427,24 @@ class ReleaseManager {
     }
 }
 exports.ReleaseManager = ReleaseManager;
+
+
+/***/ }),
+
+/***/ 6629:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.parseRepository = parseRepository;
+function parseRepository(repository) {
+    const parts = repository.split('/').filter(Boolean);
+    if (parts.length !== 2) {
+        throw new Error(`Invalid repository format: ${repository}. Expected format: owner/repo`);
+    }
+    return { owner: parts[0], repo: parts[1] };
+}
 
 
 /***/ }),

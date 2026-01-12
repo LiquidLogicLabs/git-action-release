@@ -120,6 +120,7 @@ export interface ActionInputs {
   updateOnlyUnreleased: boolean;
   generateReleaseNotes: boolean;
   generateReleaseNotesPreviousTag?: string;
+  repository?: string;
   owner?: string;
   repo?: string;
   omitBody: boolean;

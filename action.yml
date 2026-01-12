@@ -88,6 +88,10 @@ inputs:
     default: ''
   
   # Advanced options
+  repository:
+    description: 'Repository in owner/repo format (e.g., LiquidLogicLabs/git-action-release). If provided, takes precedence over owner and repo inputs'
+    required: false
+    default: ''
   owner:
     description: 'Optionally specify the owner of the repo where the release should be generated. Defaults to current repo owner'
     required: false
