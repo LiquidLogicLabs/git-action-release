@@ -117,7 +117,7 @@ class PlatformDetector {
             core.warning(`Could not detect platform from URL: ${repoUrl}, defaulting to GitHub`);
             return { platform: 'github' };
         }
-        catch (error) {
+        catch {
             core.warning(`Failed to parse repository URL: ${repoUrl}, defaulting to GitHub`);
             return { platform: 'github' };
         }
@@ -152,7 +152,7 @@ class PlatformDetector {
                 repo: repo,
             };
         }
-        catch (error) {
+        catch {
             throw new Error(`Invalid Gitea URL format: ${url}. Expected base URL (https://gitea.example.com) or repository URL (https://gitea.example.com/owner/repo)`);
         }
     }

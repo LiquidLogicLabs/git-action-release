@@ -26332,7 +26332,7 @@ class PlatformDetector {
             core.warning(`Could not detect platform from URL: ${repoUrl}, defaulting to GitHub`);
             return { platform: 'github' };
         }
-        catch (error) {
+        catch {
             core.warning(`Failed to parse repository URL: ${repoUrl}, defaulting to GitHub`);
             return { platform: 'github' };
         }
@@ -26367,7 +26367,7 @@ class PlatformDetector {
                 repo: repo,
             };
         }
-        catch (error) {
+        catch {
             throw new Error(`Invalid Gitea URL format: ${url}. Expected base URL (https://gitea.example.com) or repository URL (https://gitea.example.com/owner/repo)`);
         }
     }
@@ -29369,7 +29369,7 @@ module.exports = parseParams
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.Glob = void 0;
-const minimatch_1 = __nccwpck_require__(1409);
+const minimatch_1 = __nccwpck_require__(6507);
 const node_url_1 = __nccwpck_require__(3136);
 const path_scurry_1 = __nccwpck_require__(6577);
 const pattern_js_1 = __nccwpck_require__(7813);
@@ -29623,7 +29623,7 @@ exports.Glob = Glob;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.hasMagic = void 0;
-const minimatch_1 = __nccwpck_require__(1409);
+const minimatch_1 = __nccwpck_require__(6507);
 /**
  * Return true if the patterns provided contain any magic glob characters,
  * given the options provided.
@@ -29661,7 +29661,7 @@ exports.hasMagic = hasMagic;
 // Ignores are always parsed in dot:true mode
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.Ignore = void 0;
-const minimatch_1 = __nccwpck_require__(1409);
+const minimatch_1 = __nccwpck_require__(6507);
 const pattern_js_1 = __nccwpck_require__(7813);
 const defaultPlatform = (typeof process === 'object' &&
     process &&
@@ -29788,10 +29788,10 @@ exports.globStream = globStream;
 exports.globSync = globSync;
 exports.globIterateSync = globIterateSync;
 exports.globIterate = globIterate;
-const minimatch_1 = __nccwpck_require__(1409);
+const minimatch_1 = __nccwpck_require__(6507);
 const glob_js_1 = __nccwpck_require__(2981);
 const has_magic_js_1 = __nccwpck_require__(5197);
-var minimatch_2 = __nccwpck_require__(1409);
+var minimatch_2 = __nccwpck_require__(6507);
 Object.defineProperty(exports, "escape", ({ enumerable: true, get: function () { return minimatch_2.escape; } }));
 Object.defineProperty(exports, "unescape", ({ enumerable: true, get: function () { return minimatch_2.unescape; } }));
 var glob_js_2 = __nccwpck_require__(2981);
@@ -29859,7 +29859,7 @@ exports.glob.glob = exports.glob;
 // this is just a very light wrapper around 2 arrays with an offset index
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.Pattern = void 0;
-const minimatch_1 = __nccwpck_require__(1409);
+const minimatch_1 = __nccwpck_require__(6507);
 const isPatternList = (pl) => pl.length >= 1;
 const isGlobList = (gl) => gl.length >= 1;
 /**
@@ -30085,7 +30085,7 @@ exports.Pattern = Pattern;
 // synchronous utility for filtering entries and calculating subwalks
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.Processor = exports.SubWalks = exports.MatchRecord = exports.HasWalkedCache = void 0;
-const minimatch_1 = __nccwpck_require__(1409);
+const minimatch_1 = __nccwpck_require__(6507);
 /**
  * A cache of which patterns have been processed for a given Path
  */
@@ -30779,7 +30779,7 @@ exports.GlobStream = GlobStream;
 
 /***/ }),
 
-/***/ 8895:
+/***/ 7305:
 /***/ ((__unused_webpack_module, exports) => {
 
 "use strict";
@@ -30800,7 +30800,7 @@ exports.assertValidPattern = assertValidPattern;
 
 /***/ }),
 
-/***/ 3238:
+/***/ 1803:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
 "use strict";
@@ -30808,8 +30808,8 @@ exports.assertValidPattern = assertValidPattern;
 // parse a single path portion
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.AST = void 0;
-const brace_expressions_js_1 = __nccwpck_require__(5192);
-const unescape_js_1 = __nccwpck_require__(9829);
+const brace_expressions_js_1 = __nccwpck_require__(1090);
+const unescape_js_1 = __nccwpck_require__(851);
 const types = new Set(['!', '?', '+', '*', '@']);
 const isExtglobType = (c) => types.has(c);
 // Patterns that get prepended to bind to the start of either the
@@ -31399,7 +31399,7 @@ exports.AST = AST;
 
 /***/ }),
 
-/***/ 5192:
+/***/ 1090:
 /***/ ((__unused_webpack_module, exports) => {
 
 "use strict";
@@ -31558,7 +31558,7 @@ exports.parseClass = parseClass;
 
 /***/ }),
 
-/***/ 6726:
+/***/ 800:
 /***/ ((__unused_webpack_module, exports) => {
 
 "use strict";
@@ -31587,7 +31587,7 @@ exports.escape = escape;
 
 /***/ }),
 
-/***/ 1409:
+/***/ 6507:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
@@ -31598,10 +31598,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.unescape = exports.escape = exports.AST = exports.Minimatch = exports.match = exports.makeRe = exports.braceExpand = exports.defaults = exports.filter = exports.GLOBSTAR = exports.sep = exports.minimatch = void 0;
 const brace_expansion_1 = __importDefault(__nccwpck_require__(4691));
-const assert_valid_pattern_js_1 = __nccwpck_require__(8895);
-const ast_js_1 = __nccwpck_require__(3238);
-const escape_js_1 = __nccwpck_require__(6726);
-const unescape_js_1 = __nccwpck_require__(9829);
+const assert_valid_pattern_js_1 = __nccwpck_require__(7305);
+const ast_js_1 = __nccwpck_require__(1803);
+const escape_js_1 = __nccwpck_require__(800);
+const unescape_js_1 = __nccwpck_require__(851);
 const minimatch = (p, pattern, options = {}) => {
     (0, assert_valid_pattern_js_1.assertValidPattern)(pattern);
     // shortcut: comments match nothing.
@@ -32596,11 +32596,11 @@ class Minimatch {
 }
 exports.Minimatch = Minimatch;
 /* c8 ignore start */
-var ast_js_2 = __nccwpck_require__(3238);
+var ast_js_2 = __nccwpck_require__(1803);
 Object.defineProperty(exports, "AST", ({ enumerable: true, get: function () { return ast_js_2.AST; } }));
-var escape_js_2 = __nccwpck_require__(6726);
+var escape_js_2 = __nccwpck_require__(800);
 Object.defineProperty(exports, "escape", ({ enumerable: true, get: function () { return escape_js_2.escape; } }));
-var unescape_js_2 = __nccwpck_require__(9829);
+var unescape_js_2 = __nccwpck_require__(851);
 Object.defineProperty(exports, "unescape", ({ enumerable: true, get: function () { return unescape_js_2.unescape; } }));
 /* c8 ignore stop */
 exports.minimatch.AST = ast_js_1.AST;
@@ -32611,7 +32611,7 @@ exports.minimatch.unescape = unescape_js_1.unescape;
 
 /***/ }),
 
-/***/ 9829:
+/***/ 851:
 /***/ ((__unused_webpack_module, exports) => {
 
 "use strict";
