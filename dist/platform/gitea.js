@@ -85,16 +85,25 @@ class GiteaProvider extends provider_1.BaseProvider {
             method: 'POST',
             body: JSON.stringify(releaseData),
         });
-        this.logger.info(`Created Gitea release: ${data.html_url}`);
+        let resolved = data;
+        if (!resolved.id) {
+            this.logger.warning('Gitea createRelease returned empty body, fetching release by tag.');
+            const fetched = await this.getReleaseByTag(config.tag);
+            if (!fetched) {
+                throw new Error('Gitea createRelease returned no body and release could not be fetched by tag.');
+            }
+            return fetched;
+        }
+        this.logger.info(`Created Gitea release: ${resolved.html_url}`);
         return {
-            id: data.id.toString(),
-            html_url: data.html_url,
-            upload_url: data.upload_url,
-            tarball_url: data.tarball_url,
-            zipball_url: data.zipball_url,
+            id: resolved.id.toString(),
+            html_url: resolved.html_url,
+            upload_url: resolved.upload_url,
+            tarball_url: resolved.tarball_url,
+            zipball_url: resolved.zipball_url,
             assets: {},
-            draft: data.draft,
-            prerelease: data.prerelease,
+            draft: resolved.draft,
+            prerelease: resolved.prerelease,
         };
     }
     /**
@@ -120,6 +129,19 @@ class GiteaProvider extends provider_1.BaseProvider {
             method: 'PATCH',
             body: JSON.stringify(releaseData),
         });
+        if (!data.id) {
+            this.logger.warning('Gitea updateRelease returned empty body, using releaseId fallback.');
+            return {
+                id: releaseId,
+                html_url: data.html_url || '',
+                upload_url: data.upload_url || '',
+                tarball_url: data.tarball_url || '',
+                zipball_url: data.zipball_url || '',
+                assets: {},
+                draft: data.draft,
+                prerelease: data.prerelease
+            };
+        }
         this.logger.info(`Updated Gitea release: ${data.html_url}`);
         return {
             id: data.id.toString(),
@@ -299,8 +321,17 @@ class GiteaProvider extends provider_1.BaseProvider {
             this.logger.debug(`Gitea error response: ${errorText.substring(0, 500)}`);
             throw new Error(`HTTP ${response.status} ${response.statusText}: ${errorText}`);
         }
-        const data = response.status === 204 ? {} : (await response.json());
-        return { data: data, status: response.status };
+        const text = response.status === 204 ? '' : await response.text();
+        if (!text) {
+            return { data: {}, status: response.status };
+        }
+        try {
+            const data = JSON.parse(text);
+            return { data, status: response.status };
+        }
+        catch (error) {
+            throw new Error(`Failed to parse Gitea JSON response: ${String(error)}`);
+        }
     }
 }
 exports.GiteaProvider = GiteaProvider;

@@ -50,9 +50,10 @@ async function run(): Promise<void> {
     logger.debug(`repositoryUrl: ${repositoryUrl || 'not set'}`);
 
     // Detect platform
-    const platformInfo = PlatformDetector.detect(
+    const platformInfo = await PlatformDetector.detect(
       inputs.platform,
-      repositoryUrl
+      repositoryUrl,
+      token
     );
 
     logger.info(`Detected platform: ${platformInfo.platform}`);

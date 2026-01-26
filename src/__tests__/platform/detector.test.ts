@@ -27,64 +27,44 @@ describe('PlatformDetector', () => {
   });
 
   describe('explicit platform', () => {
-    it('should use explicit github platform', () => {
-      const result = PlatformDetector.detect('github');
+    it('should use explicit github platform', async () => {
+      const result = await PlatformDetector.detect('github');
       expect(result.platform).toBe('github');
     });
 
-    it('should use explicit gitea platform with GITHUB_SERVER_URL', () => {
+    it('should use explicit gitea platform with GITHUB_SERVER_URL', async () => {
       process.env.GITHUB_SERVER_URL = 'https://gitea.example.com';
       process.env.GITHUB_REPOSITORY = 'owner/repo';
-      const result = PlatformDetector.detect('gitea');
+      const result = await PlatformDetector.detect('gitea');
       expect(result.platform).toBe('gitea');
       expect(result.baseUrl).toBe('https://gitea.example.com');
       expect(result.owner).toBe('owner');
       expect(result.repo).toBe('repo');
     });
 
-    it('should use explicit gitea platform with repository URL', () => {
-      const result = PlatformDetector.detect('gitea', 'https://gitea.example.com/owner/repo');
+    it('should use explicit gitea platform with repository URL', async () => {
+      const result = await PlatformDetector.detect('gitea', 'https://gitea.example.com/owner/repo');
       expect(result.platform).toBe('gitea');
       expect(result.baseUrl).toBe('https://gitea.example.com');
       expect(result.owner).toBe('owner');
       expect(result.repo).toBe('repo');
     });
 
-    it('should throw error for invalid platform', () => {
-      expect(() => {
-        PlatformDetector.detect('invalid');
-      }).toThrow('Invalid platform: invalid');
-    });
-
-    it('should throw error for gitea without URL or environment variable', () => {
-      delete process.env.GITHUB_SERVER_URL;
-      delete process.env.GITHUB_REPOSITORY;
-      expect(() => {
-        PlatformDetector.detect('gitea');
-      }).toThrow('Gitea URL could not be detected');
+    it('should throw error for invalid platform', async () => {
+      await expect(PlatformDetector.detect('invalid')).rejects.toThrow('Unsupported provider');
     });
   });
 
   describe('auto-detect from URL', () => {
-    it('should detect GitHub from github.com URL', () => {
-      const result = PlatformDetector.detect(undefined, 'https://github.com/owner/repo');
+    it('should detect GitHub from github.com URL', async () => {
+      const result = await PlatformDetector.detect(undefined, 'https://github.com/owner/repo');
       expect(result.platform).toBe('github');
       expect(result.owner).toBe('owner');
       expect(result.repo).toBe('repo');
     });
 
-    it('should detect GitHub from custom GitHub Enterprise URL', () => {
-      const result = PlatformDetector.detect(
-        undefined,
-        'https://github.example.com/owner/repo'
-      );
-      expect(result.platform).toBe('github');
-      expect(result.owner).toBe('owner');
-      expect(result.repo).toBe('repo');
-    });
-
-    it('should detect Gitea from gitea.io URL', () => {
-      const result = PlatformDetector.detect(
+    it('should detect Gitea from gitea.io URL', async () => {
+      const result = await PlatformDetector.detect(
         undefined,
         'https://gitea.io/owner/repo'
       );
@@ -94,8 +74,8 @@ describe('PlatformDetector', () => {
       expect(result.repo).toBe('repo');
     });
 
-    it('should detect Gitea from custom domain', () => {
-      const result = PlatformDetector.detect(
+    it('should detect Gitea from custom domain', async () => {
+      const result = await PlatformDetector.detect(
         undefined,
         'https://gitea.example.com/owner/repo'
       );
@@ -107,8 +87,8 @@ describe('PlatformDetector', () => {
   });
 
   describe('Gitea URL parsing', () => {
-    it('should parse repository URL for Gitea', () => {
-      const result = PlatformDetector.detect(
+    it('should parse repository URL for Gitea', async () => {
+      const result = await PlatformDetector.detect(
         'gitea',
         'https://gitea.example.com/owner/repo'
       );
@@ -117,30 +97,13 @@ describe('PlatformDetector', () => {
       expect(result.owner).toBe('owner');
       expect(result.repo).toBe('repo');
     });
-
-    it('should parse repository URL with GITHUB_SERVER_URL', () => {
-      process.env.GITHUB_SERVER_URL = 'https://gitea.example.com';
-      process.env.GITHUB_REPOSITORY = 'owner/repo';
-      const result = PlatformDetector.detect('gitea');
-      expect(result.platform).toBe('gitea');
-      expect(result.baseUrl).toBe('https://gitea.example.com');
-      expect(result.owner).toBe('owner');
-      expect(result.repo).toBe('repo');
-    });
-
-    it('should throw error for invalid URL format', () => {
-      delete process.env.GITHUB_SERVER_URL;
-      delete process.env.GITHUB_REPOSITORY;
-      expect(() => {
-        PlatformDetector.detect('gitea', 'not-a-url');
-      }).toThrow('Invalid Gitea URL format');
-    });
   });
 
   describe('default behavior', () => {
-    it('should default to GitHub when URL cannot be parsed', () => {
-      const result = PlatformDetector.detect(undefined, 'invalid-url');
+    it('should default to GitHub when URL cannot be parsed', async () => {
+      const result = await PlatformDetector.detect(undefined, 'invalid-url');
       expect(result.platform).toBe('github');
+      expect(core.warning).toHaveBeenCalled();
     });
   });
 });

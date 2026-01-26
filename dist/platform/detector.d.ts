@@ -15,18 +15,6 @@ export declare class PlatformDetector {
     /**
      * Detect platform from explicit input or auto-detect
      */
-    static detect(explicitPlatform?: string, repositoryUrl?: string): PlatformInfo;
-    /**
-     * Detect platform with explicit platform type
-     */
-    private static detectWithPlatform;
-    /**
-     * Detect platform from repository URL
-     */
-    private static detectFromUrl;
-    /**
-     * Parse Gitea URL (supports base URL or repository URL)
-     */
-    private static parseGiteaUrl;
+    static detect(explicitPlatform?: string, repositoryUrl?: string, token?: string): Promise<PlatformInfo>;
 }
 //# sourceMappingURL=detector.d.ts.map

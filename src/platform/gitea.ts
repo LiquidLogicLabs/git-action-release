@@ -85,17 +85,27 @@ export class GiteaProvider extends BaseProvider {
       body: JSON.stringify(releaseData),
     });
 
-    this.logger.info(`Created Gitea release: ${data.html_url}`);
+    let resolved = data;
+    if (!resolved.id) {
+      this.logger.warning('Gitea createRelease returned empty body, fetching release by tag.');
+      const fetched = await this.getReleaseByTag(config.tag);
+      if (!fetched) {
+        throw new Error('Gitea createRelease returned no body and release could not be fetched by tag.');
+      }
+      return fetched;
+    }
+
+    this.logger.info(`Created Gitea release: ${resolved.html_url}`);
 
     return {
-      id: data.id.toString(),
-      html_url: data.html_url,
-      upload_url: data.upload_url,
-      tarball_url: data.tarball_url,
-      zipball_url: data.zipball_url,
+      id: resolved.id.toString(),
+      html_url: resolved.html_url,
+      upload_url: resolved.upload_url,
+      tarball_url: resolved.tarball_url,
+      zipball_url: resolved.zipball_url,
       assets: {},
-      draft: data.draft,
-      prerelease: data.prerelease,
+      draft: resolved.draft,
+      prerelease: resolved.prerelease,
     };
   }
 
@@ -138,6 +148,20 @@ export class GiteaProvider extends BaseProvider {
       method: 'PATCH',
       body: JSON.stringify(releaseData),
     });
+
+    if (!data.id) {
+      this.logger.warning('Gitea updateRelease returned empty body, using releaseId fallback.');
+      return {
+        id: releaseId,
+        html_url: data.html_url || '',
+        upload_url: data.upload_url || '',
+        tarball_url: data.tarball_url || '',
+        zipball_url: data.zipball_url || '',
+        assets: {},
+        draft: data.draft,
+        prerelease: data.prerelease
+      };
+    }
 
     this.logger.info(`Updated Gitea release: ${data.html_url}`);
 
@@ -371,8 +395,16 @@ export class GiteaProvider extends BaseProvider {
       );
     }
 
-    const data = response.status === 204 ? ({} as T) : ((await response.json()) as T);
+    const text = response.status === 204 ? '' : await response.text();
+    if (!text) {
+      return { data: {} as T, status: response.status };
+    }
 
-    return { data: data as T, status: response.status };
+    try {
+      const data = JSON.parse(text) as T;
+      return { data, status: response.status };
+    } catch (error) {
+      throw new Error(`Failed to parse Gitea JSON response: ${String(error)}`);
+    }
   }
 }
