@@ -27206,10 +27206,11 @@ class GiteaProvider extends provider_1.BaseProvider {
         };
     }
     async findReleaseByTagWithRetries(tag) {
-        const maxRetries = 10;
-        const baseDelayMs = 500;
+        const maxRetries = this.readEnvNumber('GITEA_RELEASE_LOOKUP_MAX_RETRIES', 10);
+        const baseDelayMs = this.readEnvNumber('GITEA_RELEASE_LOOKUP_BASE_DELAY_MS', 500);
+        const maxDelayMs = this.readEnvNumber('GITEA_RELEASE_LOOKUP_MAX_DELAY_MS', 8000);
         for (let attempt = 1; attempt <= maxRetries; attempt++) {
-            const delayMs = Math.min(baseDelayMs * Math.pow(2, attempt - 1), 8000);
+            const delayMs = Math.min(baseDelayMs * Math.pow(2, attempt - 1), maxDelayMs);
             await new Promise((resolve) => setTimeout(resolve, delayMs));
             const byTag = await this.getReleaseByTag(tag);
             if (byTag) {
@@ -27224,6 +27225,14 @@ class GiteaProvider extends provider_1.BaseProvider {
             this.logger.debug(`Attempt ${attempt}/${maxRetries}: Release not yet available, retrying...`);
         }
         return null;
+    }
+    readEnvNumber(name, fallback) {
+        const raw = process.env[name];
+        if (!raw) {
+            return fallback;
+        }
+        const parsed = Number.parseInt(raw, 10);
+        return Number.isNaN(parsed) ? fallback : Math.max(parsed, 0);
     }
     async findReleaseInList(tag) {
         try {

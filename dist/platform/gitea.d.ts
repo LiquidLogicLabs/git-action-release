@@ -29,6 +29,7 @@ export declare class GiteaProvider extends BaseProvider {
      */
     createRelease(config: ReleaseConfig): Promise<ReleaseResult>;
     private findReleaseByTagWithRetries;
+    private readEnvNumber;
     private findReleaseInList;
     /**
      * Update an existing release

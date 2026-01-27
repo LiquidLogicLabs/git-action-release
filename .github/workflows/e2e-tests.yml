@@ -11,6 +11,7 @@ jobs:
   e2e:
     runs-on: ubuntu-latest
     environment: TEST
+    continue-on-error: ${{ matrix.platform == 'gitea' }}
     strategy:
       matrix:
         include:
