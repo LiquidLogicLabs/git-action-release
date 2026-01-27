@@ -16,11 +16,24 @@ jobs:
         include:
           - platform: github
             repo: ${{ vars.TEST_GITHUB_REPO || 'LiquidLogicLabs/git-action-release-tests' }}
+            baseUrl: ''
+            repoPath: ${{ vars.TEST_GITHUB_REPO || 'LiquidLogicLabs/git-action-release-tests' }}
           - platform: gitea
             repo: ${{ vars.TEST_GITEA_REPO || 'https://git.ravenwolf.org/l3io/git-action-release-tests' }}
+            baseUrl: ${{ vars.TEST_GITEA_BASE_URL || 'https://git.ravenwolf.org' }}
+            repoPath: ${{ vars.TEST_GITEA_REPO_PATH || 'l3io/git-action-release-tests' }}
       fail-fast: false  # Continue testing other platforms if one fails
     env:
       TEST_TOKEN: ${{ matrix.platform == 'github' && secrets.TEST_GITHUB_TOKEN || secrets.TEST_GITEA_TOKEN }}
+      # Gitea environment variables (for Gitea platform to emulate Gitea Actions environment)
+      GITEA_ACTIONS: ${{ matrix.platform == 'gitea' && 'true' || '' }}
+      GITEA_WORKSPACE: ${{ matrix.platform == 'gitea' && github.workspace || '' }}
+      GITEA_SERVER_URL: ${{ matrix.platform == 'gitea' && matrix.baseUrl || '' }}
+      GITEA_REPOSITORY: ${{ matrix.platform == 'gitea' && matrix.repoPath || '' }}
+      GITEA_BASE_URL: ${{ matrix.platform == 'gitea' && matrix.baseUrl || '' }}
+      # Gitea Actions compatibility: also set GITHUB_* vars pointing to Gitea
+      GITHUB_SERVER_URL: ${{ matrix.platform == 'gitea' && matrix.baseUrl || '' }}
+      GITHUB_REPOSITORY: ${{ matrix.platform == 'gitea' && matrix.repoPath || '' }}
     steps:
       - name: Checkout action code
         uses: actions/checkout@v4
@@ -72,6 +85,8 @@ jobs:
           name: E2E Test Release ${{ steps.test_tag.outputs.tag }}
           body: This is a test release created by E2E tests
           verbose: true
+        # Note: Gitea environment variables are set at the job level via matrix values
+        # This allows the action to properly detect Gitea environment when running E2E tests
 
       - name: Verify release outputs
         run: |
@@ -98,6 +113,8 @@ jobs:
           name: E2E Test Release Updated ${{ steps.test_tag.outputs.tag }}
           body: This release has been updated by E2E tests
           allowUpdates: true
+        # Note: Gitea environment variables are set at the job level via matrix values
+        # This allows the action to properly detect Gitea environment when running E2E tests
 
       - name: Verify update outputs
         run: |
@@ -110,13 +127,9 @@ jobs:
       - name: Configure Tea CLI (Gitea only)
         if: matrix.platform == 'gitea'
         run: |
-          # Extract base URL and owner/repo from full repository URL
-          REPO_URL="${{ matrix.repo }}"
-          GITEA_BASE_URL=$(echo "$REPO_URL" | sed -E 's|^https?://([^/]+).*|\1|')
-          GITEA_BASE_URL="https://${GITEA_BASE_URL}"
-          echo "Configuring Tea CLI for ${GITEA_BASE_URL}"
+          echo "Configuring Tea CLI for ${{ matrix.baseUrl }}"
           # Configure Tea CLI login non-interactively
-          tea login add --name gitea --url "${GITEA_BASE_URL}" --token "${{ env.TEST_TOKEN }}" || true
+          tea login add --name gitea --url "${{ matrix.baseUrl }}" --token "${{ env.TEST_TOKEN }}" || true
 
       - name: Cleanup - Delete release
         if: always()
@@ -128,9 +141,7 @@ jobs:
             gh api -X DELETE "/repos/$REPO/git/refs/tags/${{ steps.test_tag.outputs.tag }}" || true
           else
             # Gitea cleanup using Tea CLI
-            # Extract owner/repo from full repository URL
-            REPO_URL="${{ matrix.repo }}"
-            REPO=$(echo "$REPO_URL" | sed -E 's|^https?://[^/]+/(.+)|\1|')
+            REPO="${{ matrix.repoPath }}"
             TAG="${{ steps.test_tag.outputs.tag }}"
             
             echo "Deleting Gitea release: ${TAG} from ${REPO}"
