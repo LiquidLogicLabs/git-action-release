@@ -63,10 +63,73 @@ class GiteaProvider extends provider_1.BaseProvider {
         return repo ? repo.split('/')[1] : '';
     }
     /**
+     * Get the default branch HEAD SHA
+     */
+    async getDefaultBranchSha() {
+        this.logger.debug('Getting default branch HEAD SHA from Gitea');
+        const repoUrl = `${this.apiBaseUrl}/repos/${this.owner}/${this.repo}`;
+        const { data: repoData } = await this.request(repoUrl, {
+            method: 'GET',
+        });
+        if (!repoData?.default_branch) {
+            throw new Error('Could not determine default branch from repository');
+        }
+        const branchUrl = `${this.apiBaseUrl}/repos/${this.owner}/${this.repo}/git/refs/heads/${repoData.default_branch}`;
+        const { data: branchData } = await this.request(branchUrl, {
+            method: 'GET',
+        });
+        if (!branchData?.object?.sha) {
+            throw new Error(`Could not get HEAD SHA for branch ${repoData.default_branch}`);
+        }
+        this.logger.debug(`Default branch ${repoData.default_branch} HEAD SHA: ${branchData.object.sha}`);
+        return branchData.object.sha;
+    }
+    /**
+     * Check if a tag exists in the repository
+     */
+    async tagExists(tag) {
+        try {
+            const url = `${this.apiBaseUrl}/repos/${this.owner}/${this.repo}/git/refs/tags/${tag}`;
+            await this.request(url, {
+                method: 'GET',
+            });
+            return true;
+        }
+        catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            if (errorMessage.includes('404')) {
+                return false;
+            }
+            // Re-throw other errors
+            throw error;
+        }
+    }
+    /**
      * Create a new release
      */
     async createRelease(config) {
         this.logger.debug(`Creating Gitea release for tag: ${config.tag}`);
+        // Gitea requires the tag to exist before creating a release
+        // Check if tag exists, and create it if it doesn't
+        const tagExists = await this.tagExists(config.tag);
+        if (!tagExists) {
+            this.logger.debug(`Tag ${config.tag} does not exist, creating it first`);
+            // Get commit SHA: use provided commit, or try GITHUB_SHA/GITEA_SHA, or get default branch HEAD
+            let commitSha = config.commit;
+            if (!commitSha) {
+                // Try environment variables first (faster, no API call needed)
+                commitSha = process.env.GITHUB_SHA || process.env.GITEA_SHA;
+                if (!commitSha) {
+                    // Fall back to getting default branch HEAD SHA
+                    commitSha = await this.getDefaultBranchSha();
+                }
+                else {
+                    this.logger.debug(`Using commit SHA from environment: ${commitSha.substring(0, 7)}...`);
+                }
+            }
+            await this.createTag(config.tag, commitSha, `Release ${config.tag}`);
+            this.logger.info(`Created tag ${config.tag} at ${commitSha}`);
+        }
         const releaseData = {
             tag_name: config.tag,
             name: config.name || config.tag,
@@ -87,10 +150,10 @@ class GiteaProvider extends provider_1.BaseProvider {
         });
         let resolved = data;
         if (!resolved.id) {
-            this.logger.warning('Gitea createRelease returned empty body, fetching release by tag.');
-            const fetched = await this.getReleaseByTag(config.tag);
+            this.logger.warning('Gitea createRelease returned empty body, fetching release by tag with retries.');
+            const fetched = await this.findReleaseByTagWithRetries(config.tag);
             if (!fetched) {
-                throw new Error('Gitea createRelease returned no body and release could not be fetched by tag.');
+                throw new Error('Gitea createRelease returned no body and release could not be fetched by tag after retries.');
             }
             return fetched;
         }
@@ -105,6 +168,54 @@ class GiteaProvider extends provider_1.BaseProvider {
             draft: resolved.draft,
             prerelease: resolved.prerelease,
         };
+    }
+    async findReleaseByTagWithRetries(tag) {
+        const maxRetries = 10;
+        const baseDelayMs = 500;
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            const delayMs = Math.min(baseDelayMs * Math.pow(2, attempt - 1), 8000);
+            await new Promise((resolve) => setTimeout(resolve, delayMs));
+            const byTag = await this.getReleaseByTag(tag);
+            if (byTag) {
+                this.logger.debug(`Fetched release by tag after ${attempt} attempt(s)`);
+                return byTag;
+            }
+            const byList = await this.findReleaseInList(tag);
+            if (byList) {
+                this.logger.debug(`Fetched release from list after ${attempt} attempt(s)`);
+                return byList;
+            }
+            this.logger.debug(`Attempt ${attempt}/${maxRetries}: Release not yet available, retrying...`);
+        }
+        return null;
+    }
+    async findReleaseInList(tag) {
+        try {
+            const url = `${this.apiBaseUrl}/repos/${this.owner}/${this.repo}/releases`;
+            const { data } = await this.request(url, { method: 'GET' });
+            const found = data.find((release) => release.tag_name === tag);
+            if (!found) {
+                return null;
+            }
+            const assets = {};
+            (found.assets || []).forEach((asset) => {
+                assets[asset.name] = asset.browser_download_url;
+            });
+            return {
+                id: found.id.toString(),
+                html_url: found.html_url,
+                upload_url: found.upload_url,
+                tarball_url: found.tarball_url,
+                zipball_url: found.zipball_url,
+                assets,
+                draft: found.draft,
+                prerelease: found.prerelease,
+            };
+        }
+        catch (error) {
+            this.logger.debug(`Failed to list releases during retry: ${error instanceof Error ? error.message : String(error)}`);
+            return null;
+        }
     }
     /**
      * Update an existing release

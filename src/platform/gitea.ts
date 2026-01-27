@@ -161,23 +161,9 @@ export class GiteaProvider extends BaseProvider {
     let resolved = data;
     if (!resolved.id) {
       this.logger.warning('Gitea createRelease returned empty body, fetching release by tag with retries.');
-      // Retry fetching the release with exponential backoff (Gitea may need time to index the release)
-      const maxRetries = 5;
-      const baseDelayMs = 500;
-      let fetched: ReleaseResult | null = null;
-      
-      for (let attempt = 1; attempt <= maxRetries; attempt++) {
-        await new Promise((resolve) => setTimeout(resolve, baseDelayMs * attempt));
-        fetched = await this.getReleaseByTag(config.tag);
-        if (fetched) {
-          this.logger.debug(`Successfully fetched release by tag after ${attempt} attempt(s)`);
-          break;
-        }
-        this.logger.debug(`Attempt ${attempt}/${maxRetries}: Release not yet available, retrying...`);
-      }
-      
+      const fetched = await this.findReleaseByTagWithRetries(config.tag);
       if (!fetched) {
-        throw new Error(`Gitea createRelease returned no body and release could not be fetched by tag after ${maxRetries} retries.`);
+        throw new Error('Gitea createRelease returned no body and release could not be fetched by tag after retries.');
       }
       return fetched;
     }
@@ -194,6 +180,75 @@ export class GiteaProvider extends BaseProvider {
       draft: resolved.draft,
       prerelease: resolved.prerelease,
     };
+  }
+
+  private async findReleaseByTagWithRetries(tag: string): Promise<ReleaseResult | null> {
+    const maxRetries = 10;
+    const baseDelayMs = 500;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      const delayMs = Math.min(baseDelayMs * Math.pow(2, attempt - 1), 8000);
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+
+      const byTag = await this.getReleaseByTag(tag);
+      if (byTag) {
+        this.logger.debug(`Fetched release by tag after ${attempt} attempt(s)`);
+        return byTag;
+      }
+
+      const byList = await this.findReleaseInList(tag);
+      if (byList) {
+        this.logger.debug(`Fetched release from list after ${attempt} attempt(s)`);
+        return byList;
+      }
+
+      this.logger.debug(`Attempt ${attempt}/${maxRetries}: Release not yet available, retrying...`);
+    }
+
+    return null;
+  }
+
+  private async findReleaseInList(tag: string): Promise<ReleaseResult | null> {
+    try {
+      const url = `${this.apiBaseUrl}/repos/${this.owner}/${this.repo}/releases`;
+      const { data } = await this.request<
+        Array<{
+          id: number;
+          html_url: string;
+          upload_url: string;
+          tarball_url: string;
+          zipball_url: string;
+          tag_name: string;
+          draft?: boolean;
+          prerelease?: boolean;
+          assets?: Array<{ id: number; name: string; browser_download_url: string }>;
+        }>
+      >(url, { method: 'GET' });
+
+      const found = data.find((release) => release.tag_name === tag);
+      if (!found) {
+        return null;
+      }
+
+      const assets: Record<string, string> = {};
+      (found.assets || []).forEach((asset) => {
+        assets[asset.name] = asset.browser_download_url;
+      });
+
+      return {
+        id: found.id.toString(),
+        html_url: found.html_url,
+        upload_url: found.upload_url,
+        tarball_url: found.tarball_url,
+        zipball_url: found.zipball_url,
+        assets,
+        draft: found.draft,
+        prerelease: found.prerelease,
+      };
+    } catch (error: unknown) {
+      this.logger.debug(`Failed to list releases during retry: ${error instanceof Error ? error.message : String(error)}`);
+      return null;
+    }
   }
 
   /**

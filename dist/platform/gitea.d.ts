@@ -17,9 +17,19 @@ export declare class GiteaProvider extends BaseProvider {
     });
     private extractRepoFromEnv;
     /**
+     * Get the default branch HEAD SHA
+     */
+    private getDefaultBranchSha;
+    /**
+     * Check if a tag exists in the repository
+     */
+    private tagExists;
+    /**
      * Create a new release
      */
     createRelease(config: ReleaseConfig): Promise<ReleaseResult>;
+    private findReleaseByTagWithRetries;
+    private findReleaseInList;
     /**
      * Update an existing release
      */
