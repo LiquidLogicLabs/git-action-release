@@ -26,6 +26,8 @@ jobs:
       fail-fast: false  # Continue testing other platforms if one fails
     env:
       TEST_TOKEN: ${{ matrix.platform == 'github' && secrets.TEST_GITHUB_TOKEN || secrets.TEST_GITEA_TOKEN }}
+      GITEA_RELEASE_LOOKUP_BASE_DELAY_MS: ${{ matrix.platform == 'gitea' && '1500' || '' }}
+      GITEA_RELEASE_LOOKUP_MAX_DELAY_MS: ${{ matrix.platform == 'gitea' && '12000' || '' }}
       # Gitea environment variables (for Gitea platform to emulate Gitea Actions environment)
       GITEA_ACTIONS: ${{ matrix.platform == 'gitea' && 'true' || '' }}
       GITEA_WORKSPACE: ${{ matrix.platform == 'gitea' && github.workspace || '' }}
