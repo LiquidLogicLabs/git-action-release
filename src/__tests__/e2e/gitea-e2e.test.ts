@@ -9,6 +9,43 @@ import { ActionInputs, ReleaseConfig } from '../../types';
 import { Logger } from '../../logger';
 import { cleanupRelease, generateTestTag } from './cleanup';
 
+async function getDefaultBranchSha(baseUrl: string, owner: string, repo: string, token: string): Promise<string> {
+  const repoUrl = `${baseUrl.replace(/\/$/, '')}/api/v1/repos/${owner}/${repo}`;
+  const repoResponse = await fetch(repoUrl, {
+    headers: {
+      Authorization: `token ${token}`,
+      Accept: 'application/json',
+    },
+  });
+  if (!repoResponse.ok) {
+    throw new Error(`Failed to fetch repository info: ${repoResponse.status} ${repoResponse.statusText}`);
+  }
+  const repoData = (await repoResponse.json()) as { default_branch?: string };
+  if (!repoData.default_branch) {
+    throw new Error('Repository default branch not found');
+  }
+
+  const refUrl = `${baseUrl.replace(/\/$/, '')}/api/v1/repos/${owner}/${repo}/git/refs/heads/${repoData.default_branch}`;
+  const refResponse = await fetch(refUrl, {
+    headers: {
+      Authorization: `token ${token}`,
+      Accept: 'application/json',
+    },
+  });
+  if (!refResponse.ok) {
+    throw new Error(`Failed to fetch default branch ref: ${refResponse.status} ${refResponse.statusText}`);
+  }
+  const refData = (await refResponse.json()) as
+    | { object?: { sha?: string }; sha?: string; commit?: { sha?: string } }
+    | Array<{ object?: { sha?: string }; sha?: string; commit?: { sha?: string } }>;
+  const normalized = Array.isArray(refData) ? refData[0] : refData;
+  const sha = normalized?.object?.sha || normalized?.sha || normalized?.commit?.sha;
+  if (!sha) {
+    throw new Error(`Default branch HEAD SHA not found. Response: ${JSON.stringify(refData)}`);
+  }
+  return sha;
+}
+
 describe('Gitea E2E Tests', () => {
   const TEST_REPO = process.env.TEST_GITEA_REPO || 'liquidlogiclabs/git-action-release-tests';
   const TEST_GITEA_URL = process.env.TEST_GITEA_URL || 'https://git.ravenwolf.org';
@@ -50,12 +87,14 @@ describe('Gitea E2E Tests', () => {
   });
 
   it('should create a release', async () => {
+    const commit = await getDefaultBranchSha(TEST_GITEA_URL, testOwner, testRepo, TEST_TOKEN as string);
     const config: ReleaseConfig = {
       tag: testTag,
       name: `E2E Test Release ${testTag}`,
       body: 'This is a test release created by E2E tests',
       draft: false,
       prerelease: false,
+      commit,
     };
 
     const result = await provider.createRelease(config);
@@ -71,12 +110,14 @@ describe('Gitea E2E Tests', () => {
   }, 30000);
 
   it('should create a draft release', async () => {
+    const commit = await getDefaultBranchSha(TEST_GITEA_URL, testOwner, testRepo, TEST_TOKEN as string);
     const config: ReleaseConfig = {
       tag: testTag,
       name: `E2E Test Draft Release ${testTag}`,
       body: 'This is a draft release',
       draft: true,
       prerelease: false,
+      commit,
     };
 
     const result = await provider.createRelease(config);
@@ -91,6 +132,7 @@ describe('Gitea E2E Tests', () => {
   }, 30000);
 
   it('should update an existing release', async () => {
+    const commit = await getDefaultBranchSha(TEST_GITEA_URL, testOwner, testRepo, TEST_TOKEN as string);
     // Create a release first
     const createConfig: ReleaseConfig = {
       tag: testTag,
@@ -98,6 +140,7 @@ describe('Gitea E2E Tests', () => {
       body: 'Original body',
       draft: false,
       prerelease: false,
+      commit,
     };
 
     const created = await provider.createRelease(createConfig);
@@ -132,6 +175,7 @@ describe('Gitea E2E Tests', () => {
       throw new Error('GITEA_TOKEN is required');
     }
 
+    const commit = await getDefaultBranchSha(TEST_GITEA_URL, testOwner, testRepo, TEST_TOKEN);
     const inputs: ActionInputs = {
       token: TEST_TOKEN,
       tag: testTag,
@@ -139,6 +183,7 @@ describe('Gitea E2E Tests', () => {
       body: 'Release created via ReleaseManager',
       draft: false,
       prerelease: false,
+      commit,
       replacesArtifacts: true,
       removeArtifacts: false,
       artifactErrorsFailBuild: false,
@@ -166,12 +211,14 @@ describe('Gitea E2E Tests', () => {
   it('should handle self-hosted Gitea URL correctly', async () => {
     expect(provider).toBeDefined();
     // Verify provider is configured with correct base URL
+    const commit = await getDefaultBranchSha(TEST_GITEA_URL, testOwner, testRepo, TEST_TOKEN as string);
     const config: ReleaseConfig = {
       tag: testTag,
       name: `E2E Test Self-Hosted ${testTag}`,
       body: 'Testing self-hosted Gitea',
       draft: false,
       prerelease: false,
+      commit,
     };
 
     const result = await provider.createRelease(config);
