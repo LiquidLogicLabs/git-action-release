@@ -43,10 +43,83 @@ export class GiteaProvider extends BaseProvider {
   }
 
   /**
+   * Get the default branch HEAD SHA
+   */
+  private async getDefaultBranchSha(): Promise<string> {
+    this.logger.debug('Getting default branch HEAD SHA from Gitea');
+    const repoUrl = `${this.apiBaseUrl}/repos/${this.owner}/${this.repo}`;
+    const { data: repoData } = await this.request<{
+      default_branch: string;
+    }>(repoUrl, {
+      method: 'GET',
+    });
+
+    if (!repoData?.default_branch) {
+      throw new Error('Could not determine default branch from repository');
+    }
+
+    const branchUrl = `${this.apiBaseUrl}/repos/${this.owner}/${this.repo}/git/refs/heads/${repoData.default_branch}`;
+    const { data: branchData } = await this.request<{
+      ref?: string;
+      object?: { sha: string; type?: string; url?: string };
+    }>(branchUrl, {
+      method: 'GET',
+    });
+
+    if (!branchData?.object?.sha) {
+      throw new Error(`Could not get HEAD SHA for branch ${repoData.default_branch}`);
+    }
+
+    this.logger.debug(`Default branch ${repoData.default_branch} HEAD SHA: ${branchData.object.sha}`);
+    return branchData.object.sha;
+  }
+
+  /**
+   * Check if a tag exists in the repository
+   */
+  private async tagExists(tag: string): Promise<boolean> {
+    try {
+      const url = `${this.apiBaseUrl}/repos/${this.owner}/${this.repo}/git/refs/tags/${tag}`;
+      await this.request(url, {
+        method: 'GET',
+      });
+      return true;
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('404')) {
+        return false;
+      }
+      // Re-throw other errors
+      throw error;
+    }
+  }
+
+  /**
    * Create a new release
    */
   async createRelease(config: ReleaseConfig): Promise<ReleaseResult> {
     this.logger.debug(`Creating Gitea release for tag: ${config.tag}`);
+
+    // Gitea requires the tag to exist before creating a release
+    // Check if tag exists, and create it if it doesn't
+    const tagExists = await this.tagExists(config.tag);
+    if (!tagExists) {
+      this.logger.debug(`Tag ${config.tag} does not exist, creating it first`);
+      // Get commit SHA: use provided commit, or try GITHUB_SHA/GITEA_SHA, or get default branch HEAD
+      let commitSha = config.commit;
+      if (!commitSha) {
+        // Try environment variables first (faster, no API call needed)
+        commitSha = process.env.GITHUB_SHA || process.env.GITEA_SHA;
+        if (!commitSha) {
+          // Fall back to getting default branch HEAD SHA
+          commitSha = await this.getDefaultBranchSha();
+        } else {
+          this.logger.debug(`Using commit SHA from environment: ${commitSha.substring(0, 7)}...`);
+        }
+      }
+      await this.createTag(config.tag, commitSha, `Release ${config.tag}`);
+      this.logger.info(`Created tag ${config.tag} at ${commitSha}`);
+    }
 
     const releaseData: {
       tag_name: string;

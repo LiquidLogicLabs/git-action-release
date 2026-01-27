@@ -59,12 +59,31 @@ describe('GiteaProvider Integration Tests', () => {
 
   describe('createRelease', () => {
     it('should create a release successfully', async () => {
+      // Set GITHUB_SHA for the test (will be used as fallback)
+      const originalSha = process.env.GITHUB_SHA;
+      process.env.GITHUB_SHA = 'abc123def456789';
+
       const config = createMockReleaseConfig({
         tag: 'v1.0.0',
         name: 'v1.0.0',
         body: 'Test release',
       });
 
+      // Mock tag existence check (tag doesn't exist)
+      fetchMock.mock404(
+        `${apiBaseUrl}/repos/${testOwner}/${testRepo}/git/refs/tags/v1.0.0`
+      );
+
+      // Mock creating the tag (using GITHUB_SHA from environment)
+      fetchMock.mockResponse(
+        `${apiBaseUrl}/repos/${testOwner}/${testRepo}/tags`,
+        {
+          status: 201,
+          data: giteaResponses.createTag,
+        }
+      );
+
+      // Mock creating the release
       fetchMock.mockResponse(
         `${apiBaseUrl}/repos/${testOwner}/${testRepo}/releases`,
         {
@@ -74,6 +93,13 @@ describe('GiteaProvider Integration Tests', () => {
       );
 
       const result = await provider.createRelease(config);
+
+      // Restore original SHA
+      if (originalSha) {
+        process.env.GITHUB_SHA = originalSha;
+      } else {
+        delete process.env.GITHUB_SHA;
+      }
 
       expect(result.id).toBe('123456');
       expect(result.html_url).toBe(giteaResponses.createRelease.html_url);
@@ -92,11 +118,30 @@ describe('GiteaProvider Integration Tests', () => {
     });
 
     it('should create a draft release', async () => {
+      // Set GITHUB_SHA for the test
+      const originalSha = process.env.GITHUB_SHA;
+      process.env.GITHUB_SHA = 'abc123def456789';
+
       const config = createMockReleaseConfig({
         tag: 'v1.0.0',
         draft: true,
       });
 
+      // Mock tag existence check (tag doesn't exist)
+      fetchMock.mock404(
+        `${apiBaseUrl}/repos/${testOwner}/${testRepo}/git/refs/tags/v1.0.0`
+      );
+
+      // Mock creating the tag
+      fetchMock.mockResponse(
+        `${apiBaseUrl}/repos/${testOwner}/${testRepo}/tags`,
+        {
+          status: 201,
+          data: giteaResponses.createTag,
+        }
+      );
+
+      // Mock creating the release
       fetchMock.mockResponse(
         `${apiBaseUrl}/repos/${testOwner}/${testRepo}/releases`,
         {
@@ -107,15 +152,41 @@ describe('GiteaProvider Integration Tests', () => {
 
       const result = await provider.createRelease(config);
 
+      // Restore original SHA
+      if (originalSha) {
+        process.env.GITHUB_SHA = originalSha;
+      } else {
+        delete process.env.GITHUB_SHA;
+      }
+
       expect(result.draft).toBe(true);
     });
 
     it('should create a prerelease', async () => {
+      // Set GITHUB_SHA for the test
+      const originalSha = process.env.GITHUB_SHA;
+      process.env.GITHUB_SHA = 'abc123def456789';
+
       const config = createMockReleaseConfig({
         tag: 'v1.0.0-alpha.1',
         prerelease: true,
       });
 
+      // Mock tag existence check (tag doesn't exist)
+      fetchMock.mock404(
+        `${apiBaseUrl}/repos/${testOwner}/${testRepo}/git/refs/tags/v1.0.0-alpha.1`
+      );
+
+      // Mock creating the tag
+      fetchMock.mockResponse(
+        `${apiBaseUrl}/repos/${testOwner}/${testRepo}/tags`,
+        {
+          status: 201,
+          data: giteaResponses.createTag,
+        }
+      );
+
+      // Mock creating the release
       fetchMock.mockResponse(
         `${apiBaseUrl}/repos/${testOwner}/${testRepo}/releases`,
         {
@@ -126,19 +197,43 @@ describe('GiteaProvider Integration Tests', () => {
 
       const result = await provider.createRelease(config);
 
+      // Restore original SHA
+      if (originalSha) {
+        process.env.GITHUB_SHA = originalSha;
+      } else {
+        delete process.env.GITHUB_SHA;
+      }
+
       expect(result.prerelease).toBe(true);
     });
 
     it('should handle API errors', async () => {
+      // Set GITHUB_SHA for the test (so it doesn't try to get default branch)
+      const originalSha = process.env.GITHUB_SHA;
+      process.env.GITHUB_SHA = 'abc123def456789';
+
       const config = createMockReleaseConfig();
 
+      // Mock tag existence check (tag doesn't exist)
+      fetchMock.mock404(
+        `${apiBaseUrl}/repos/${testOwner}/${testRepo}/git/refs/tags/v1.0.0`
+      );
+
+      // Mock creating the tag - this will fail
       fetchMock.mockError(
-        `${apiBaseUrl}/repos/${testOwner}/${testRepo}/releases`,
-        401,
+        `${apiBaseUrl}/repos/${testOwner}/${testRepo}/tags`,
+        403,
         'user does not have permission'
       );
 
       await expect(provider.createRelease(config)).rejects.toThrow('user does not have permission');
+
+      // Restore original SHA
+      if (originalSha) {
+        process.env.GITHUB_SHA = originalSha;
+      } else {
+        delete process.env.GITHUB_SHA;
+      }
     });
   });
 

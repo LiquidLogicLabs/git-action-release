@@ -319,6 +319,45 @@ describe('Action Execution Integration Tests', () => {
         `https://git.ravenwolf.org/api/v1/repos/${testOwner}/${testRepo}/releases/tags/v1.0.0`
       );
 
+      // Mock tag existence check (tag doesn't exist)
+      fetchMock.mock404(
+        `https://git.ravenwolf.org/api/v1/repos/${testOwner}/${testRepo}/git/refs/tags/v1.0.0`
+      );
+
+      // Mock getting repository info (for default branch)
+      fetchMock.mockResponse(
+        `https://git.ravenwolf.org/api/v1/repos/${testOwner}/${testRepo}`,
+        {
+          status: 200,
+          data: { default_branch: 'main' },
+        }
+      );
+
+      // Mock getting default branch HEAD SHA
+      fetchMock.mockResponse(
+        `https://git.ravenwolf.org/api/v1/repos/${testOwner}/${testRepo}/git/refs/heads/main`,
+        {
+          status: 200,
+          data: {
+            ref: `refs/heads/main`,
+            object: {
+              sha: 'abc123def456',
+              type: 'commit',
+              url: `https://git.ravenwolf.org/api/v1/repos/${testOwner}/${testRepo}/git/commits/abc123def456`
+            }
+          },
+        }
+      );
+
+      // Mock creating the tag
+      fetchMock.mockResponse(
+        `https://git.ravenwolf.org/api/v1/repos/${testOwner}/${testRepo}/tags`,
+        {
+          status: 201,
+          data: giteaResponses.createTag,
+        }
+      );
+
       // Mock createRelease
       fetchMock.mockResponse(
         `https://git.ravenwolf.org/api/v1/repos/${testOwner}/${testRepo}/releases`,
@@ -365,6 +404,13 @@ describe('Action Execution Integration Tests', () => {
 
       expect(result.id).toBe('123456');
       expect(result.html_url).toBe(giteaResponses.createRelease.html_url);
+
+      // Restore original SHA
+      if (originalSha) {
+        process.env.GITHUB_SHA = originalSha;
+      } else {
+        delete process.env.GITHUB_SHA;
+      }
     });
   });
 
