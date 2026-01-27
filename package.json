@@ -1,6 +1,6 @@
 {
   "name": "release-action",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Multi-platform release action (GitHub, Gitea, self-hosted Gitea)",
   "main": "dist/index.js",
   "scripts": {
