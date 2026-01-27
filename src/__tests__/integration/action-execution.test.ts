@@ -314,6 +314,10 @@ describe('Action Execution Integration Tests', () => {
       mock.setInput('name', 'Release v1.0.0');
       mock.setInput('body', 'Release body');
 
+      // Set GITHUB_SHA for the test
+      const originalSha = process.env.GITHUB_SHA;
+      process.env.GITHUB_SHA = 'abc123def456789';
+
       // Mock getReleaseByTag - no existing release
       fetchMock.mock404(
         `https://git.ravenwolf.org/api/v1/repos/${testOwner}/${testRepo}/releases/tags/v1.0.0`
@@ -322,31 +326,6 @@ describe('Action Execution Integration Tests', () => {
       // Mock tag existence check (tag doesn't exist)
       fetchMock.mock404(
         `https://git.ravenwolf.org/api/v1/repos/${testOwner}/${testRepo}/git/refs/tags/v1.0.0`
-      );
-
-      // Mock getting repository info (for default branch)
-      fetchMock.mockResponse(
-        `https://git.ravenwolf.org/api/v1/repos/${testOwner}/${testRepo}`,
-        {
-          status: 200,
-          data: { default_branch: 'main' },
-        }
-      );
-
-      // Mock getting default branch HEAD SHA
-      fetchMock.mockResponse(
-        `https://git.ravenwolf.org/api/v1/repos/${testOwner}/${testRepo}/git/refs/heads/main`,
-        {
-          status: 200,
-          data: {
-            ref: `refs/heads/main`,
-            object: {
-              sha: 'abc123def456',
-              type: 'commit',
-              url: `https://git.ravenwolf.org/api/v1/repos/${testOwner}/${testRepo}/git/commits/abc123def456`
-            }
-          },
-        }
       );
 
       // Mock creating the tag
