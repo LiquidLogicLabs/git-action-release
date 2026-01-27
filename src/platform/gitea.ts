@@ -87,10 +87,24 @@ export class GiteaProvider extends BaseProvider {
 
     let resolved = data;
     if (!resolved.id) {
-      this.logger.warning('Gitea createRelease returned empty body, fetching release by tag.');
-      const fetched = await this.getReleaseByTag(config.tag);
+      this.logger.warning('Gitea createRelease returned empty body, fetching release by tag with retries.');
+      // Retry fetching the release with exponential backoff (Gitea may need time to index the release)
+      const maxRetries = 5;
+      const baseDelayMs = 500;
+      let fetched: ReleaseResult | null = null;
+      
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        await new Promise((resolve) => setTimeout(resolve, baseDelayMs * attempt));
+        fetched = await this.getReleaseByTag(config.tag);
+        if (fetched) {
+          this.logger.debug(`Successfully fetched release by tag after ${attempt} attempt(s)`);
+          break;
+        }
+        this.logger.debug(`Attempt ${attempt}/${maxRetries}: Release not yet available, retrying...`);
+      }
+      
       if (!fetched) {
-        throw new Error('Gitea createRelease returned no body and release could not be fetched by tag.');
+        throw new Error(`Gitea createRelease returned no body and release could not be fetched by tag after ${maxRetries} retries.`);
       }
       return fetched;
     }
