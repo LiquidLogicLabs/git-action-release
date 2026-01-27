@@ -304,6 +304,27 @@ jobs:
 - Automatically detects Gitea URL from `GITHUB_SERVER_URL` environment variable (available in Gitea Actions)
 - Requires repository access token with release permissions
 
+#### Gitea Release Lookup Retries
+
+When Gitea returns an empty response body on release creation, the action retries fetching the release by tag. You can tune the retry behavior with environment variables:
+
+- `GITEA_RELEASE_LOOKUP_MAX_RETRIES` (default: `10`)
+- `GITEA_RELEASE_LOOKUP_BASE_DELAY_MS` (default: `500`)
+- `GITEA_RELEASE_LOOKUP_MAX_DELAY_MS` (default: `8000`)
+
+Example workflow configuration:
+
+```yaml
+      - uses: LiquidLogicLabs/git-action-release@v1
+        env:
+          GITEA_RELEASE_LOOKUP_MAX_RETRIES: '12'
+          GITEA_RELEASE_LOOKUP_BASE_DELAY_MS: '750'
+          GITEA_RELEASE_LOOKUP_MAX_DELAY_MS: '10000'
+        with:
+          platform: 'gitea'
+          tag: ${{ github.ref_name }}
+          token: ${{ secrets.GITEA_TOKEN }}
+
 ## Migration from ncipollo/release-action
 
 If you're migrating from `ncipollo/release-action`, the action is largely compatible. The main differences are:
