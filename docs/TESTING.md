@@ -73,9 +73,9 @@ E2E tests are designed to be run multiple times safely:
 # Using standard token names (recommended)
 export GITHUB_TOKEN="your-github-token"  # Or use TEST_GITHUB_TOKEN in TEST environment
 export GITEA_TOKEN="your-gitea-token"
-export TEST_GITHUB_REPO="your-org/your-test-repo"  # Optional
-export TEST_GITEA_REPO="your-org/your-test-repo"   # Optional
-export TEST_GITEA_URL="https://your-gitea-instance.com"  # Optional
+export TEST_GITHUB_REPO="LiquidLogicLabs/git-action-release-tests"  # Optional
+export TEST_GITEA_REPO="l3io/git-action-release-tests"              # Optional
+export TEST_GITEA_URL="https://git.ravenwolf.org"                   # Optional
 
 npm run test:e2e
 

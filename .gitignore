@@ -33,8 +33,14 @@ coverage/
 .bmad-core/
 .github/chatmodes/
 
-# act local files (keep samples, ignore real)
-.act.secrets
-.act.vars
+# act local overrides
+.act.env.local
+.act.vars.local
+.act.secrets.local
 
 # Note: dist/ is NOT ignored - it's required for the action to work
+# Local dev (act)
+.env.*
+.secrets
+.secrets.*
+.actrc.local
