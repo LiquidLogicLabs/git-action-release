@@ -26724,12 +26724,15 @@ async function run() {
         else {
             throw new Error('Token is required. Provide token input or ensure GITHUB_TOKEN is available.');
         }
-        // Get verbose flag
-        const verbose = core.getBooleanInput('verbose');
+        // Get verbose flag (support ACTIONS_STEP_DEBUG)
+        const verboseInput = core.getBooleanInput('verbose');
+        const envStepDebug = (process.env.ACTIONS_STEP_DEBUG || '').toLowerCase();
+        const stepDebugEnabled = core.isDebug() || envStepDebug === 'true' || envStepDebug === '1';
+        const verbose = verboseInput || stepDebugEnabled;
         const logger = new logger_1.Logger(verbose);
         logger.debug('Starting multi-platform release action');
         // Get inputs
-        const inputs = getInputs();
+        const inputs = getInputs(verbose);
         logger.debug(`Platform: ${inputs.platform || 'auto-detect'}`);
         // Get repository URL from environment or repository input
         logger.debug(`GITHUB_SERVER_URL: ${process.env.GITHUB_SERVER_URL || 'not set'}`);
@@ -26772,7 +26775,7 @@ async function run() {
 /**
  * Get all action inputs
  */
-function getInputs() {
+function getInputs(verbose) {
     return {
         platform: core.getInput('platform') || undefined,
         token: core.getInput('token') || process.env.GITHUB_TOKEN || '',
@@ -26802,7 +26805,7 @@ function getInputs() {
         omitName: core.getBooleanInput('omitName'),
         omitNameDuringUpdate: core.getBooleanInput('omitNameDuringUpdate'),
         omitPrereleaseDuringUpdate: core.getBooleanInput('omitPrereleaseDuringUpdate'),
-        verbose: core.getBooleanInput('verbose'),
+        verbose,
     };
 }
 /**
