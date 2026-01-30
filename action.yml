@@ -127,7 +127,7 @@ inputs:
   
   # Logging
   verbose:
-    description: 'Enable verbose debug logging'
+    description: 'Enable verbose debug logging. Also enabled when ACTIONS_STEP_DEBUG=true.'
     required: false
     default: 'false'
 outputs:
