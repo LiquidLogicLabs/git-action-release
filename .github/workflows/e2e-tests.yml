@@ -37,26 +37,10 @@ jobs:
       # Gitea Actions compatibility: also set GITHUB_* vars pointing to Gitea
       GITHUB_SERVER_URL: ${{ matrix.platform == 'gitea' && matrix.baseUrl || '' }}
       GITHUB_REPOSITORY: ${{ matrix.platform == 'gitea' && matrix.repoPath || '' }}
+    # Run action from committed dist only (no build). Ensures E2E fails if dist is unbundled.
     steps:
       - name: Checkout action code
         uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-
-      - name: Configure npm auth for package registry
-        run: echo "//git.ravenwolf.org/api/packages/liquidlogiclabs/npm/:_authToken=${NPM_REGISTRY_TOKEN}" >> .npmrc
-        env:
-          NPM_REGISTRY_TOKEN: ${{ secrets.NPM_REGISTRY_TOKEN }}
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build action
-        run: npm run build
 
       - name: Setup Go (Gitea only)
         if: matrix.platform == 'gitea'
