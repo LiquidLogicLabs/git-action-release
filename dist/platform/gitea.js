@@ -340,11 +340,11 @@ class GiteaProvider extends provider_1.BaseProvider {
         // Use the upload_url provided by Gitea (it already includes the release ID)
         const url = uploadUrl || `${this.apiBaseUrl}/repos/${this.owner}/${this.repo}/releases/${releaseId}/assets`;
         // Note: When using FormData, don't set Content-Type - fetch will set it with boundary automatically
-        const response = await fetch(url, {
+        const response = await fetch(url, this.buildFetchOptions({
             method: 'POST',
             headers,
             body: formData,
-        });
+        }));
         if (!response.ok) {
             const errorText = await response.text().catch(() => response.statusText);
             throw new Error(`Failed to upload asset: HTTP ${response.status} ${response.statusText}: ${errorText}`);
@@ -430,10 +430,10 @@ class GiteaProvider extends provider_1.BaseProvider {
         this.logger.debug(`Gitea request URL: ${url}`);
         this.logger.debug(`Gitea request method: ${options.method || 'GET'}`);
         this.logger.debug(`Gitea request headers: ${JSON.stringify(Object.keys(headers).map(k => `${k}: ${k === 'Authorization' ? 'token ***' : headers[k]}`))}`);
-        const response = await fetch(url, {
+        const response = await fetch(url, this.buildFetchOptions({
             ...options,
             headers,
-        });
+        }));
         this.logger.debug(`Gitea response status: ${response.status} ${response.statusText}`);
         this.logger.debug(`Gitea response headers: ${JSON.stringify(Object.fromEntries(response.headers.entries()))}`);
         if (!response.ok) {

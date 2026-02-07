@@ -240,11 +240,11 @@ class GitHubProvider extends provider_1.BaseProvider {
             'Content-Type': contentType,
             'Content-Length': stats.size.toString(),
         };
-        const response = await fetch(url, {
+        const response = await fetch(url, this.buildFetchOptions({
             method: 'POST',
             headers,
             body: fileContent,
-        });
+        }));
         if (!response.ok) {
             const errorText = await response.text().catch(() => response.statusText);
             throw new Error(`Failed to upload asset: HTTP ${response.status} ${response.statusText}: ${errorText}`);
@@ -344,10 +344,10 @@ class GitHubProvider extends provider_1.BaseProvider {
             'Content-Type': 'application/json',
             ...options.headers,
         };
-        const response = await fetch(url, {
+        const response = await fetch(url, this.buildFetchOptions({
             ...options,
             headers,
-        });
+        }));
         if (!response.ok) {
             const errorText = await response.text().catch(() => response.statusText);
             throw new Error(`HTTP ${response.status} ${response.statusText}: ${errorText}`);

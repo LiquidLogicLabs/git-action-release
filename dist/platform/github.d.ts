@@ -12,6 +12,7 @@ export declare class GitHubProvider extends BaseProvider {
         token: string;
         owner?: string;
         repo?: string;
+        skipCertificateCheck?: boolean;
         logger: Logger;
     });
     private extractRepoFromEnv;

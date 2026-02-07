@@ -1,3 +1,4 @@
+import { Agent } from 'undici';
 import { IProvider, ReleaseConfig, ReleaseResult, AssetConfig } from '../types';
 /**
  * Abstract base class for platform providers
@@ -9,13 +10,16 @@ export declare abstract class BaseProvider implements IProvider {
     protected owner?: string;
     protected repo?: string;
     protected logger: import('../logger').Logger;
+    protected dispatcher?: Agent;
     constructor(config: {
         token: string;
         baseUrl?: string;
         owner?: string;
         repo?: string;
+        skipCertificateCheck?: boolean;
         logger: import('../logger').Logger;
     });
+    protected buildFetchOptions(options: RequestInit): RequestInit;
     abstract createRelease(config: ReleaseConfig): Promise<ReleaseResult>;
     abstract updateRelease(releaseId: string, config: Partial<ReleaseConfig>): Promise<ReleaseResult>;
     abstract getReleaseByTag(tag: string): Promise<ReleaseResult | null>;

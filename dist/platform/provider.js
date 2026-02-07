@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.BaseProvider = void 0;
+const undici_1 = require("undici");
 /**
  * Abstract base class for platform providers
  * All platform implementations should extend this class
@@ -11,12 +12,23 @@ class BaseProvider {
     owner;
     repo;
     logger;
+    dispatcher;
     constructor(config) {
         this.token = config.token;
         this.baseUrl = config.baseUrl;
         this.owner = config.owner;
         this.repo = config.repo;
         this.logger = config.logger;
+        if (config.skipCertificateCheck) {
+            this.dispatcher = new undici_1.Agent({ connect: { rejectUnauthorized: false } });
+        }
+    }
+    buildFetchOptions(options) {
+        const requestOptions = { ...options };
+        if (this.dispatcher) {
+            requestOptions.dispatcher = this.dispatcher;
+        }
+        return requestOptions;
     }
     /**
      * Make an authenticated HTTP request
@@ -28,10 +40,10 @@ class BaseProvider {
             'Content-Type': 'application/json',
             ...options.headers,
         };
-        const response = await fetch(url, {
+        const response = await fetch(url, this.buildFetchOptions({
             ...options,
             headers,
-        });
+        }));
         if (!response.ok) {
             const errorText = await response.text().catch(() => response.statusText);
             throw new Error(`HTTP ${response.status} ${response.statusText}: ${errorText}`);

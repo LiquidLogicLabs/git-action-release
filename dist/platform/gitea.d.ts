@@ -13,6 +13,7 @@ export declare class GiteaProvider extends BaseProvider {
         baseUrl?: string;
         owner?: string;
         repo?: string;
+        skipCertificateCheck?: boolean;
         logger: Logger;
     });
     private extractRepoFromEnv;
