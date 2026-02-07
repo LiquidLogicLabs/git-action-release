@@ -86,13 +86,13 @@ jobs:
             echo "❌ Release ID is missing"
             exit 1
           fi
-          if [ -z "${{ steps.create_release.outputs.html_url }}" ]; then
+          if [ -z "${{ steps.create_release.outputs.htmlUrl }}" ]; then
             echo "❌ Release HTML URL is missing"
             exit 1
           fi
           echo "✅ Release created successfully"
           echo "  ID: ${{ steps.create_release.outputs.id }}"
-          echo "  URL: ${{ steps.create_release.outputs.html_url }}"
+          echo "  URL: ${{ steps.create_release.outputs.htmlUrl }}"
 
       - name: Test - Update release
         id: update_release
