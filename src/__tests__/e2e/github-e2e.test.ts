@@ -138,6 +138,7 @@ describe('GitHub E2E Tests', () => {
       body: 'Release created via ReleaseManager',
       draft: false,
       prerelease: false,
+      skipCertificateCheck: false,
       replacesArtifacts: true,
       removeArtifacts: false,
       artifactErrorsFailBuild: false,

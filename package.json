@@ -57,7 +57,8 @@
   "dependencies": {
     "@actions/core": "^1.11.1",
     "git-platform-detector": "https://git.ravenwolf.org/api/packages/liquidlogiclabs/npm/git-platform-detector/-/git-platform-detector-1.1.0.tgz",
-    "glob": "^10.3.10"
+    "glob": "^10.3.10",
+    "undici": "^6.21.1"
   },
   "devDependencies": {
     "@types/glob": "^8.1.0",

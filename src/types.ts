@@ -49,6 +49,7 @@ export interface ProviderConfig {
   baseUrl?: string;
   owner?: string;
   repo?: string;
+  skipCertificateCheck?: boolean;
   logger: import('./logger').Logger;
 }
 
@@ -130,4 +131,5 @@ export interface ActionInputs {
   omitNameDuringUpdate: boolean;
   omitPrereleaseDuringUpdate: boolean;
   verbose: boolean;
+  skipCertificateCheck: boolean;
 }

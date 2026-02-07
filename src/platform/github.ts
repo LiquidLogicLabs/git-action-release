@@ -16,6 +16,7 @@ export class GitHubProvider extends BaseProvider {
     token: string;
     owner?: string;
     repo?: string;
+    skipCertificateCheck?: boolean;
     logger: Logger;
   }) {
     super(config);
@@ -314,11 +315,11 @@ export class GitHubProvider extends BaseProvider {
       'Content-Length': stats.size.toString(),
     };
 
-    const response = await fetch(url, {
+    const response = await fetch(url, this.buildFetchOptions({
       method: 'POST',
       headers,
       body: fileContent,
-    });
+    }));
 
     if (!response.ok) {
       const errorText = await response.text().catch(() => response.statusText);
@@ -448,10 +449,10 @@ export class GitHubProvider extends BaseProvider {
       ...(options.headers as Record<string, string>),
     };
 
-    const response = await fetch(url, {
+    const response = await fetch(url, this.buildFetchOptions({
       ...options,
       headers,
-    });
+    }));
 
     if (!response.ok) {
       const errorText = await response.text().catch(() => response.statusText);

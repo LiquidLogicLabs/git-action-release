@@ -1,3 +1,4 @@
+import { Agent } from 'undici';
 import { IProvider, ReleaseConfig, ReleaseResult, AssetConfig } from '../types';
 
 /**
@@ -10,12 +11,14 @@ export abstract class BaseProvider implements IProvider {
   protected owner?: string;
   protected repo?: string;
   protected logger: import('../logger').Logger;
+  protected dispatcher?: Agent;
 
   constructor(config: {
     token: string;
     baseUrl?: string;
     owner?: string;
     repo?: string;
+    skipCertificateCheck?: boolean;
     logger: import('../logger').Logger;
   }) {
     this.token = config.token;
@@ -23,6 +26,17 @@ export abstract class BaseProvider implements IProvider {
     this.owner = config.owner;
     this.repo = config.repo;
     this.logger = config.logger;
+    if (config.skipCertificateCheck) {
+      this.dispatcher = new Agent({ connect: { rejectUnauthorized: false } });
+    }
+  }
+
+  protected buildFetchOptions(options: RequestInit): RequestInit {
+    const requestOptions: RequestInit = { ...options };
+    if (this.dispatcher) {
+      (requestOptions as { dispatcher?: Agent }).dispatcher = this.dispatcher;
+    }
+    return requestOptions;
   }
 
   abstract createRelease(config: ReleaseConfig): Promise<ReleaseResult>;
@@ -48,10 +62,10 @@ export abstract class BaseProvider implements IProvider {
       ...(options.headers as Record<string, string>),
     };
 
-    const response = await fetch(url, {
+    const response = await fetch(url, this.buildFetchOptions({
       ...options,
       headers,
-    });
+    }));
 
     if (!response.ok) {
       const errorText = await response.text().catch(() => response.statusText);

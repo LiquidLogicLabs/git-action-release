@@ -17,6 +17,7 @@ export class GiteaProvider extends BaseProvider {
     baseUrl?: string;
     owner?: string;
     repo?: string;
+    skipCertificateCheck?: boolean;
     logger: Logger;
   }) {
     super(config);
@@ -419,11 +420,11 @@ export class GiteaProvider extends BaseProvider {
     const url = uploadUrl || `${this.apiBaseUrl}/repos/${this.owner}/${this.repo}/releases/${releaseId}/assets`;
 
     // Note: When using FormData, don't set Content-Type - fetch will set it with boundary automatically
-    const response = await fetch(url, {
+    const response = await fetch(url, this.buildFetchOptions({
       method: 'POST',
       headers,
       body: formData,
-    });
+    }));
 
     if (!response.ok) {
       const errorText = await response.text().catch(() => response.statusText);
@@ -531,10 +532,10 @@ export class GiteaProvider extends BaseProvider {
     this.logger.debug(`Gitea request method: ${options.method || 'GET'}`);
     this.logger.debug(`Gitea request headers: ${JSON.stringify(Object.keys(headers).map(k => `${k}: ${k === 'Authorization' ? 'token ***' : headers[k]}`))}`);
 
-    const response = await fetch(url, {
+    const response = await fetch(url, this.buildFetchOptions({
       ...options,
       headers,
-    });
+    }));
 
     this.logger.debug(`Gitea response status: ${response.status} ${response.statusText}`);
     this.logger.debug(`Gitea response headers: ${JSON.stringify(Object.fromEntries(response.headers.entries()))}`);

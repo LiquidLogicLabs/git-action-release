@@ -183,6 +183,7 @@ describe('Gitea E2E Tests', () => {
       body: 'Release created via ReleaseManager',
       draft: false,
       prerelease: false,
+      skipCertificateCheck: false,
       commit,
       replacesArtifacts: true,
       removeArtifacts: false,
