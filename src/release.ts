@@ -302,15 +302,15 @@ export class ReleaseManager {
    */
   private setOutputs(release: ReleaseResult): void {
     core.setOutput('id', release.id);
-    core.setOutput('htmlUrl', release.html_url);
-    core.setOutput('uploadUrl', release.upload_url);
+    core.setOutput('html-url', release.html_url);
+    core.setOutput('upload-url', release.upload_url);
 
     if (release.tarball_url) {
-      core.setOutput('tarballUrl', release.tarball_url);
+      core.setOutput('tarball-url', release.tarball_url);
     }
 
     if (release.zipball_url) {
-      core.setOutput('zipballUrl', release.zipball_url);
+      core.setOutput('zipball-url', release.zipball_url);
     }
 
     if (Object.keys(release.assets).length > 0) {

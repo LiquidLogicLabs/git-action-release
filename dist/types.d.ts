@@ -122,5 +122,6 @@ export interface ActionInputs {
     omitNameDuringUpdate: boolean;
     omitPrereleaseDuringUpdate: boolean;
     verbose: boolean;
+    debugMode?: boolean;
     skipCertificateCheck: boolean;
 }

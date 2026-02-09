@@ -18,7 +18,7 @@ async function run(): Promise<void> {
       core.setSecret(inputs.token);
     }
 
-    const logger = new Logger(inputs.verbose);
+    const logger = new Logger(inputs.verbose, inputs.debugMode);
     if (inputs.skipCertificateCheck) {
       logger.warning('TLS certificate verification is disabled. This is a security risk and should only be used with trusted endpoints.');
     }

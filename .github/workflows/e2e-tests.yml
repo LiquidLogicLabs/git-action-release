@@ -86,13 +86,13 @@ jobs:
             echo "❌ Release ID is missing"
             exit 1
           fi
-          if [ -z "${{ steps.create_release.outputs.htmlUrl }}" ]; then
+          if [ -z "${{ steps.create_release.outputs.html-url }}" ]; then
             echo "❌ Release HTML URL is missing"
             exit 1
           fi
           echo "✅ Release created successfully"
           echo "  ID: ${{ steps.create_release.outputs.id }}"
-          echo "  URL: ${{ steps.create_release.outputs.htmlUrl }}"
+          echo "  URL: ${{ steps.create_release.outputs.html-url }}"
 
       - name: Test - Update release
         id: update_release
@@ -104,7 +104,7 @@ jobs:
           tag: ${{ steps.test_tag.outputs.tag }}
           name: E2E Test Release Updated ${{ steps.test_tag.outputs.tag }}
           body: This release has been updated by E2E tests
-          allowUpdates: true
+          allow-updates: true
         # Note: Gitea environment variables are set at the job level via matrix values
         # This allows the action to properly detect Gitea environment when running E2E tests
 

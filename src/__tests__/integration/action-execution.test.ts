@@ -124,7 +124,7 @@ describe('Action Execution Integration Tests', () => {
 
       mock.setInput('token', testToken);
       mock.setInput('tag', 'v1.0.0');
-      mock.setInput('skipIfReleaseExists', 'true');
+      mock.setInput('skip-if-release-exists', 'true');
 
       process.env.GITHUB_REPOSITORY = `${testOwner}/${testRepo}`;
       process.env.GITHUB_SERVER_URL = 'https://github.com';
@@ -186,7 +186,7 @@ describe('Action Execution Integration Tests', () => {
       mock.setInput('token', testToken);
       mock.setInput('tag', 'v1.0.0');
       mock.setInput('name', 'Updated Release Name');
-      mock.setInput('allowUpdates', 'true');
+      mock.setInput('allow-updates', 'true');
 
       process.env.GITHUB_REPOSITORY = `${testOwner}/${testRepo}`;
       process.env.GITHUB_SERVER_URL = 'https://github.com';

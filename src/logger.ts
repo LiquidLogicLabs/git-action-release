@@ -6,9 +6,11 @@ import * as core from '@actions/core';
  */
 export class Logger {
   public readonly verbose: boolean;
+  public readonly debugMode: boolean;
 
-  constructor(verbose: boolean = false) {
-    this.verbose = verbose;
+  constructor(verbose: boolean = false, debugMode: boolean = false) {
+    this.verbose = verbose || debugMode;
+    this.debugMode = debugMode;
   }
 
   /**
@@ -33,14 +35,37 @@ export class Logger {
   }
 
   /**
-   * Log a debug message - uses core.info() when verbose is true so it always shows
-   * Falls back to core.debug() when verbose is false (for when ACTIONS_STEP_DEBUG is set at workflow level)
+   * Log a verbose info message - only shown when verbose is true
+   */
+  verboseInfo(message: string): void {
+    if (this.verbose) {
+      core.info(message);
+    }
+  }
+
+  /**
+   * Log a debug message - uses core.info() when debugMode is true so it always shows
+   * Falls back to core.debug() when debugMode is false (for when ACTIONS_STEP_DEBUG is set at workflow level)
    */
   debug(message: string): void {
-    if (this.verbose) {
+    if (this.debugMode) {
       core.info(`[DEBUG] ${message}`);
     } else {
       core.debug(message);
     }
+  }
+
+  /**
+   * Check if verbose mode is enabled
+   */
+  isVerbose(): boolean {
+    return this.verbose;
+  }
+
+  /**
+   * Check if debug mode is enabled
+   */
+  isDebug(): boolean {
+    return this.debugMode;
   }
 }

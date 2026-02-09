@@ -87,7 +87,7 @@ jobs:
   with:
     tag: 'v1.0.0'
     artifacts: 'dist/*.zip,binaries/**/*'
-    replacesArtifacts: true
+    replaces-artifacts: true
     token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
@@ -97,7 +97,7 @@ jobs:
 - uses: LiquidLogicLabs/git-action-release@v1
   with:
     tag: 'v1.0.0'
-    bodyFile: 'CHANGELOG.md'
+    body-file: 'CHANGELOG.md'
     token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
@@ -126,8 +126,8 @@ jobs:
 |-------|-------------|----------|---------|
 | `tag` | Tag for the release. If omitted, the git ref will be used (if it is a tag) | No | - |
 | `name` | Name for the release. If omitted, the tag will be used | No | - |
-| `body` | Body for the release. Note: This input will have white space trimmed. Use `bodyFile` if you need a non-trivial markdown body | No | - |
-| `bodyFile` | Body file for the release. This should be the path to the file | No | - |
+| `body` | Body for the release. Note: This input will have white space trimmed. Use `body-file` if you need a non-trivial markdown body | No | - |
+| `body-file` | Body file for the release. This should be the path to the file | No | - |
 | `draft` | Marks this release as a draft release | No | `false` |
 | `prerelease` | Marks this release as prerelease | No | `false` |
 | `commit` | Commit reference. This will be used to create the tag if it does not exist | No | - |
@@ -137,25 +137,25 @@ jobs:
 | Input | Description | Required | Default |
 |-------|-------------|----------|---------|
 | `artifacts` | Paths representing artifacts to upload. This may be a single path or a comma delimited list of paths (or globs) | No | - |
-| `artifactContentType` | The content type of the artifact | No | `application/octet-stream` |
-| `replacesArtifacts` | Indicates if existing release artifacts should be replaced | No | `true` |
-| `removeArtifacts` | Indicates if existing release artifacts should be removed before uploading | No | `false` |
-| `artifactErrorsFailBuild` | Indicates if artifact read or upload errors should fail the build | No | `false` |
+| `artifact-content-type` | The content type of the artifact | No | `application/octet-stream` |
+| `replaces-artifacts` | Indicates if existing release artifacts should be replaced | No | `true` |
+| `remove-artifacts` | Indicates if existing release artifacts should be removed before uploading | No | `false` |
+| `artifact-errors-fail-build` | Indicates if artifact read or upload errors should fail the build | No | `false` |
 
 ### Release Management
 
 | Input | Description | Required | Default |
 |-------|-------------|----------|---------|
-| `allowUpdates` | Indicates if we should update a release if it already exists | No | `false` |
-| `skipIfReleaseExists` | When enabled, the action will be skipped if a non-draft release already exists for the provided tag | No | `false` |
-| `updateOnlyUnreleased` | When `allowUpdates` is enabled, this will fail the action if the release it is updating is not a draft or a prerelease | No | `false` |
+| `allow-updates` | Indicates if we should update a release if it already exists | No | `false` |
+| `skip-if-release-exists` | When enabled, the action will be skipped if a non-draft release already exists for the provided tag | No | `false` |
+| `update-only-unreleased` | When `allow-updates` is enabled, this will fail the action if the release it is updating is not a draft or a prerelease | No | `false` |
 
 ### Release Notes
 
 | Input | Description | Required | Default |
 |-------|-------------|----------|---------|
-| `generateReleaseNotes` | Indicates if release notes should be automatically generated (GitHub only) | No | `false` |
-| `generateReleaseNotesPreviousTag` | Previous tag to use when generating release notes. This will limit the release notes to changes between the two tags | No | - |
+| `generate-release-notes` | Indicates if release notes should be automatically generated (GitHub only) | No | `false` |
+| `generate-release-notes-previous-tag` | Previous tag to use when generating release notes. This will limit the release notes to changes between the two tags | No | - |
 
 ### Advanced Options
 
@@ -163,12 +163,12 @@ jobs:
 |-------|-------------|----------|---------|
 | `owner` | Optionally specify the owner of the repo where the release should be generated. Defaults to current repo owner | No | - |
 | `repo` | Optionally specify the repo where the release should be generated. Defaults to current repo | No | - |
-| `omitBody` | Indicates if the release body should be omitted | No | `false` |
-| `omitBodyDuringUpdate` | Indicates if the release body should be omitted during updates | No | `false` |
-| `omitDraftDuringUpdate` | Indicates if the draft flag should be omitted during updates | No | `false` |
-| `omitName` | Indicates if the release name should be omitted | No | `false` |
-| `omitNameDuringUpdate` | Indicates if the release name should be omitted during updates | No | `false` |
-| `omitPrereleaseDuringUpdate` | Indicates if the prerelease flag should be omitted during updates | No | `false` |
+| `omit-body` | Indicates if the release body should be omitted | No | `false` |
+| `omit-body-during-update` | Indicates if the release body should be omitted during updates | No | `false` |
+| `omit-draft-during-update` | Indicates if the draft flag should be omitted during updates | No | `false` |
+| `omit-name` | Indicates if the release name should be omitted | No | `false` |
+| `omit-name-during-update` | Indicates if the release name should be omitted during updates | No | `false` |
+| `omit-prerelease-during-update` | Indicates if the prerelease flag should be omitted during updates | No | `false` |
 | `verbose` | Enable verbose debug logging | No | `false` |
 
 ## Outputs
@@ -176,10 +176,10 @@ jobs:
 | Output | Description |
 |--------|-------------|
 | `id` | The identifier of the created release |
-| `html_url` | The HTML URL of the release |
-| `upload_url` | The URL for uploading assets to the release |
-| `tarball_url` | The URL for downloading the release as a tarball (.tar.gz) |
-| `zipball_url` | The URL for downloading the release as a zipball (.zip) |
+| `html-url` | The HTML URL of the release |
+| `upload-url` | The URL for uploading assets to the release |
+| `tarball-url` | The URL for downloading the release as a tarball (.tar.gz) |
+| `zipball-url` | The URL for downloading the release as a zipball (.zip) |
 | `assets` | JSON string containing a map of asset names to download URLs for uploaded assets |
 
 ## Examples
@@ -219,9 +219,9 @@ jobs:
         with:
           tag: ${{ github.ref_name }}
           name: Release ${{ github.ref_name }}
-          bodyFile: CHANGELOG.md
+          body-file: CHANGELOG.md
           artifacts: 'dist/*.zip,dist/*.tar.gz'
-          generateReleaseNotes: true
+          generate-release-notes: true
           token: ${{ env.RELEASE_TOKEN }}
 ```
 
@@ -261,7 +261,7 @@ jobs:
           platform: 'gitea'
           tag: ${{ github.ref_name }}
           name: Release ${{ github.ref_name }}
-          bodyFile: CHANGELOG.md
+          body-file: CHANGELOG.md
           artifacts: 'dist/*.zip,dist/*.tar.gz'
           token: ${{ env.RELEASE_TOKEN }}
 ```
@@ -273,7 +273,7 @@ jobs:
   with:
     tag: 'v1.0.0'
     draft: true
-    allowUpdates: true
+    allow-updates: true
     artifacts: 'build/*.zip'
     token: ${{ secrets.GITHUB_TOKEN }}
 ```
@@ -369,7 +369,7 @@ For self-hosted Gitea instances:
 - Ensure artifact paths are correct and files exist
 - Check file permissions
 - For large files, consider using a different upload mechanism
-- Set `artifactErrorsFailBuild: true` to fail fast on errors
+- Set `artifact-errors-fail-build: true` to fail fast on errors
 
 ## Testing
 

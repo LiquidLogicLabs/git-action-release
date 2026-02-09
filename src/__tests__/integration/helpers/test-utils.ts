@@ -8,8 +8,8 @@ import { ReleaseConfig, ReleaseResult } from '../../../types';
 /**
  * Create a mock logger
  */
-export function createMockLogger(verbose: boolean = false): Logger {
-  return new Logger(verbose);
+export function createMockLogger(verbose: boolean = false, debugMode: boolean = false): Logger {
+  return new Logger(verbose, debugMode);
 }
 
 /**
