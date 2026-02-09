@@ -182,6 +182,10 @@ jobs:
 | `zipball-url` | The URL for downloading the release as a zipball (.zip) |
 | `assets` | JSON string containing a map of asset names to download URLs for uploaded assets |
 
+## Permissions
+
+Creating or updating releases requires `contents: write`. The job must have a token with sufficient scope (default `GITHUB_TOKEN` or `GITEA_TOKEN` is usually sufficient when the job has the right permissions).
+
 ## Examples
 
 ### Complete GitHub Release Workflow
