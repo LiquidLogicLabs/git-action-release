@@ -23,15 +23,12 @@ permissions:
 jobs:
   ci:
     uses: ./.github/workflows/ci.yml
-    ref: ${{ github.event.inputs.tag && format('refs/tags/{0}', github.event.inputs.tag) || github.ref }}
-    # CI runs: lint -> unit tests -> integration tests
-    # ref: explicit so reusable workflow loads from tag commit when triggered by tag push
+    # Same-repo reusable workflow runs from caller commit (on tag push = tag commit)
     secrets: inherit
 
   e2e-tests:
     needs: ci  # E2E tests run after CI passes
     uses: ./.github/workflows/e2e-tests.yml
-    ref: ${{ github.event.inputs.tag && format('refs/tags/{0}', github.event.inputs.tag) || github.ref }}
     secrets: inherit
     # e2e-tests.yml runs E2E tests with TEST environment secrets
 
