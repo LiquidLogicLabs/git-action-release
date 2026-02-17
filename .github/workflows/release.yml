@@ -93,6 +93,7 @@ jobs:
           tag: ${{ github.event.inputs.tag || github.ref_name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true  # e.g. token cannot force-push existing tags; release still created below
 
       - name: Create GitHub Release
         uses: ncipollo/release-action@v1
