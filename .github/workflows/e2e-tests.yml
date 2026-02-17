@@ -48,7 +48,8 @@ jobs:
       - name: Skip if Gitea not configured
         id: skip
         run: |
-          if [ "${{ matrix.platform }}" = "gitea" ] && [ -z "${{ vars.TEST_GITEA_REPO }}" ]; then
+          # Skip Gitea cell when repo is placeholder (var was empty) or var is unset
+          if [ "${{ matrix.platform }}" = "gitea" ] && { [ -z "${{ vars.TEST_GITEA_REPO }}" ] || [ "${{ matrix.repo }}" = "skip" ]; }; then
             echo "skip=true" >> $GITHUB_OUTPUT
           else
             echo "skip=false" >> $GITHUB_OUTPUT
