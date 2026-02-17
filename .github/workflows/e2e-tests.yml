@@ -19,8 +19,8 @@ jobs:
   e2e:
     runs-on: ubuntu-latest
     environment: TEST
-    # Run GitHub always; run Gitea only when TEST_GITEA_REPO is configured
-    if: matrix.platform == 'github' || vars.TEST_GITEA_REPO != ''
+    # Run GitHub always; run Gitea only when TEST_GITEA_REPO is configured.
+    # Note: job-level "if" with matrix context can fail when workflow is called; we skip Gitea in step instead.
     strategy:
       fail-fast: false
       matrix:
@@ -30,9 +30,9 @@ jobs:
             baseUrl: ''
             repoPath: ${{ vars.TEST_GITHUB_REPO || 'LiquidLogicLabs/git-action-release-tests' }}
           - platform: gitea
-            repo: ${{ vars.TEST_GITEA_REPO }}
+            repo: ${{ vars.TEST_GITEA_REPO || 'skip' }}
             baseUrl: ${{ vars.TEST_GITEA_BASE_URL || 'https://git.ravenwolf.org' }}
-            repoPath: ${{ vars.TEST_GITEA_REPO_PATH || vars.TEST_GITEA_REPO }}
+            repoPath: ${{ vars.TEST_GITEA_REPO_PATH || vars.TEST_GITEA_REPO || 'skip' }}
     env:
       TEST_TOKEN: ${{ matrix.platform == 'github' && secrets.TEST_GITHUB_TOKEN || secrets.TEST_GITEA_TOKEN }}
       GITEA_RELEASE_LOOKUP_BASE_DELAY_MS: ${{ matrix.platform == 'gitea' && '1500' || '' }}
@@ -45,15 +45,26 @@ jobs:
       GITHUB_SERVER_URL: ${{ matrix.platform == 'gitea' && matrix.baseUrl || '' }}
       GITHUB_REPOSITORY: ${{ matrix.platform == 'gitea' && matrix.repoPath || '' }}
     steps:
+      - name: Skip if Gitea not configured
+        id: skip
+        run: |
+          if [ "${{ matrix.platform }}" = "gitea" ] && [ -z "${{ vars.TEST_GITEA_REPO }}" ]; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Checkout action code
+        if: steps.skip.outputs.skip != 'true'
         uses: actions/checkout@v4
 
       - name: Install GitHub CLI (GitHub only)
+        if: steps.skip.outputs.skip != 'true'
         if: matrix.platform == 'github'
         uses: sersoft-gmbh/setup-gh-cli-action@v3
 
       - name: Install Tea CLI (Gitea only)
-        if: matrix.platform == 'gitea'
+        if: steps.skip.outputs.skip != 'true' && matrix.platform == 'gitea'
         uses: LiquidLogicLabs/git-action-install-gitea-tea@v2
         with:
           version: 'latest'
@@ -61,6 +72,7 @@ jobs:
           repo: ${{ matrix.baseUrl }}
 
       - name: Generate unique test tag
+        if: steps.skip.outputs.skip != 'true'
         id: test_tag
         run: |
           TEST_TAG="test-e2e-${{ matrix.platform }}-${{ github.run_id }}-${{ github.run_attempt }}-$(date +%s)"
@@ -68,6 +80,7 @@ jobs:
           echo "Generated test tag: $TEST_TAG"
 
       - name: Test - Create release
+        if: steps.skip.outputs.skip != 'true'
         id: create_release
         uses: ./
         with:
@@ -80,6 +93,7 @@ jobs:
           verbose: true
 
       - name: Verify release outputs
+        if: steps.skip.outputs.skip != 'true'
         run: |
           if [ -z "${{ steps.create_release.outputs.id }}" ]; then
             echo "❌ Release ID is missing"
@@ -94,6 +108,7 @@ jobs:
           echo "  URL: ${{ steps.create_release.outputs.html-url }}"
 
       - name: Test - Update release
+        if: steps.skip.outputs.skip != 'true'
         id: update_release
         uses: ./
         with:
@@ -106,6 +121,7 @@ jobs:
           allow-updates: true
 
       - name: Verify update outputs
+        if: steps.skip.outputs.skip != 'true'
         run: |
           if [ "${{ steps.update_release.outputs.id }}" != "${{ steps.create_release.outputs.id }}" ]; then
             echo "❌ Release ID changed during update (expected same ID)"
@@ -114,13 +130,13 @@ jobs:
           echo "✅ Release updated successfully"
 
       - name: Configure Tea CLI (Gitea only)
-        if: matrix.platform == 'gitea'
+        if: steps.skip.outputs.skip != 'true' && matrix.platform == 'gitea'
         run: |
           echo "Configuring Tea CLI for ${{ matrix.baseUrl }}"
           tea login add --name gitea --url "${{ matrix.baseUrl }}" --token "${{ env.TEST_TOKEN }}" || true
 
       - name: Cleanup - Delete release
-        if: always()
+        if: always() && steps.skip.outputs.skip != 'true'
         run: |
           if [ "${{ matrix.platform }}" == "github" ]; then
             REPO="${{ matrix.repo }}"
