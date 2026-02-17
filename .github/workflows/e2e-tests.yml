@@ -59,8 +59,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install GitHub CLI (GitHub only)
-        if: steps.skip.outputs.skip != 'true'
-        if: matrix.platform == 'github'
+        if: steps.skip.outputs.skip != 'true' && matrix.platform == 'github'
         uses: sersoft-gmbh/setup-gh-cli-action@v3
 
       - name: Install Tea CLI (Gitea only)
