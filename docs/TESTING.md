@@ -60,6 +60,8 @@ E2E tests are designed to be run multiple times safely:
 - GitHub E2E tests require `GITHUB_TOKEN` environment variable (set from `TEST_GITHUB_TOKEN` secret in TEST environment)
 - Gitea E2E tests require `GITEA_TOKEN` environment variable (set from `TEST_GITEA_TOKEN` secret in TEST environment)
 
+When you run `npm test` (or `npm run test:e2e`), the Jest setup automatically loads secrets so e2e tests can run without exporting tokens manually. It reads (in order): repo `.act.secrets`, `~/.act.secrets`, and `~/.actrc` for `-s KEY=value` lines. So if you use act with `GITHUB_TOKEN` in `~/.actrc` or in `.act.secrets`, the same tokens are used for e2e. If no tokens are set, GitHub and Gitea e2e suites are skipped.
+
 **Optional environment variables:**
 
 - `TEST_GITHUB_REPO` - GitHub test repository (default: `LiquidLogicLabs/git-action-release-tests`)

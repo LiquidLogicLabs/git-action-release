@@ -46,22 +46,21 @@ async function getDefaultBranchSha(baseUrl: string, owner: string, repo: string,
   return sha;
 }
 
-describe('Gitea E2E Tests', () => {
-  const TEST_REPO = process.env.TEST_GITEA_REPO || 'liquidlogiclabs/git-action-release-tests';
-  const TEST_GITEA_URL = process.env.TEST_GITEA_URL || 'https://git.ravenwolf.org';
-  const TEST_TOKEN = process.env.GITEA_TOKEN;
-  const [testOwner, testRepo] = TEST_REPO.split('/');
+const TEST_REPO = process.env.TEST_GITEA_REPO || 'liquidlogiclabs/git-action-release-tests';
+const TEST_GITEA_URL = process.env.TEST_GITEA_URL || 'https://git.ravenwolf.org';
+const TEST_TOKEN = process.env.TEST_GITEA_TOKEN || process.env.GITEA_TOKEN;
+const [testOwner, testRepo] = TEST_REPO.split('/');
 
+describe('Gitea E2E Tests', () => {
   let provider: GiteaProvider;
   let testTag: string;
 
   beforeAll(() => {
     if (!TEST_TOKEN) {
-      throw new Error('GITEA_TOKEN required for Gitea E2E tests');
+      throw new Error('GITEA_TOKEN or TEST_GITEA_TOKEN required for e2e');
     }
-
     provider = new GiteaProvider({
-      token: TEST_TOKEN,
+      token: TEST_TOKEN as string,
       baseUrl: TEST_GITEA_URL,
       owner: testOwner,
       repo: testRepo,

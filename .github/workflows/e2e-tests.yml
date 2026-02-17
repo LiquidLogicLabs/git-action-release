@@ -1,8 +1,16 @@
+# E2E tests for GitHub and Gitea. Enable platforms via repository/environment variables:
+# - GitHub: always runs (uses TEST_GITHUB_TOKEN and vars.TEST_GITHUB_REPO when set).
+# - Gitea: runs only when vars.TEST_GITEA_REPO is set (and TEST_GITEA_TOKEN in TEST env).
 name: E2E Tests
 
 on:
   workflow_call:  # Called by release workflow
   workflow_dispatch:  # Manual trigger only
+
+concurrency:
+  # Fallbacks so group is valid on GitHub, Gitea, and act (e.g. workflow_dispatch has no ref)
+  group: ${{ github.workflow || 'E2E Tests' }}-${{ github.ref || github.sha }}
+  cancel-in-progress: true
 
 permissions:
   contents: write  # Required to create tags and releases
@@ -11,8 +19,10 @@ jobs:
   e2e:
     runs-on: ubuntu-latest
     environment: TEST
-    continue-on-error: ${{ matrix.platform == 'gitea' }}
+    # Run GitHub always; run Gitea only when TEST_GITEA_REPO is configured
+    if: matrix.platform == 'github' || vars.TEST_GITEA_REPO != ''
     strategy:
+      fail-fast: false
       matrix:
         include:
           - platform: github
@@ -20,44 +30,35 @@ jobs:
             baseUrl: ''
             repoPath: ${{ vars.TEST_GITHUB_REPO || 'LiquidLogicLabs/git-action-release-tests' }}
           - platform: gitea
-            repo: ${{ vars.TEST_GITEA_REPO || 'https://git.ravenwolf.org/l3io/git-action-release-tests' }}
+            repo: ${{ vars.TEST_GITEA_REPO }}
             baseUrl: ${{ vars.TEST_GITEA_BASE_URL || 'https://git.ravenwolf.org' }}
-            repoPath: ${{ vars.TEST_GITEA_REPO_PATH || 'l3io/git-action-release-tests' }}
-      fail-fast: false  # Continue testing other platforms if one fails
+            repoPath: ${{ vars.TEST_GITEA_REPO_PATH || vars.TEST_GITEA_REPO }}
     env:
       TEST_TOKEN: ${{ matrix.platform == 'github' && secrets.TEST_GITHUB_TOKEN || secrets.TEST_GITEA_TOKEN }}
       GITEA_RELEASE_LOOKUP_BASE_DELAY_MS: ${{ matrix.platform == 'gitea' && '1500' || '' }}
       GITEA_RELEASE_LOOKUP_MAX_DELAY_MS: ${{ matrix.platform == 'gitea' && '12000' || '' }}
-      # Gitea environment variables (for Gitea platform to emulate Gitea Actions environment)
       GITEA_ACTIONS: ${{ matrix.platform == 'gitea' && 'true' || '' }}
       GITEA_WORKSPACE: ${{ matrix.platform == 'gitea' && github.workspace || '' }}
       GITEA_SERVER_URL: ${{ matrix.platform == 'gitea' && matrix.baseUrl || '' }}
       GITEA_REPOSITORY: ${{ matrix.platform == 'gitea' && matrix.repoPath || '' }}
       GITEA_BASE_URL: ${{ matrix.platform == 'gitea' && matrix.baseUrl || '' }}
-      # Gitea Actions compatibility: also set GITHUB_* vars pointing to Gitea
       GITHUB_SERVER_URL: ${{ matrix.platform == 'gitea' && matrix.baseUrl || '' }}
       GITHUB_REPOSITORY: ${{ matrix.platform == 'gitea' && matrix.repoPath || '' }}
-    # Run action from committed dist only (no build). Ensures E2E fails if dist is unbundled.
     steps:
       - name: Checkout action code
         uses: actions/checkout@v4
 
-      - name: Setup Go (Gitea only)
-        if: matrix.platform == 'gitea'
-        uses: actions/setup-go@v5
-        with:
-          go-version: 'stable'
+      - name: Install GitHub CLI (GitHub only)
+        if: matrix.platform == 'github'
+        uses: sersoft-gmbh/setup-gh-cli-action@v3
 
       - name: Install Tea CLI (Gitea only)
         if: matrix.platform == 'gitea'
-        run: |
-          # Install Tea CLI using Go (much simpler than downloading binary)
-          echo "Installing Tea CLI using Go..."
-          go install code.gitea.io/tea@latest
-          
-          # Verify installation
-          echo "Verifying installation..."
-          ~/go/bin/tea --version || $(go env GOPATH)/bin/tea --version
+        uses: LiquidLogicLabs/git-action-install-gitea-tea@v2
+        with:
+          version: 'latest'
+          token: ${{ secrets.TEST_GITEA_TOKEN }}
+          repo: ${{ matrix.baseUrl }}
 
       - name: Generate unique test tag
         id: test_tag
@@ -77,8 +78,6 @@ jobs:
           name: E2E Test Release ${{ steps.test_tag.outputs.tag }}
           body: This is a test release created by E2E tests
           verbose: true
-        # Note: Gitea environment variables are set at the job level via matrix values
-        # This allows the action to properly detect Gitea environment when running E2E tests
 
       - name: Verify release outputs
         run: |
@@ -105,8 +104,6 @@ jobs:
           name: E2E Test Release Updated ${{ steps.test_tag.outputs.tag }}
           body: This release has been updated by E2E tests
           allow-updates: true
-        # Note: Gitea environment variables are set at the job level via matrix values
-        # This allows the action to properly detect Gitea environment when running E2E tests
 
       - name: Verify update outputs
         run: |
@@ -120,24 +117,19 @@ jobs:
         if: matrix.platform == 'gitea'
         run: |
           echo "Configuring Tea CLI for ${{ matrix.baseUrl }}"
-          # Configure Tea CLI login non-interactively
           tea login add --name gitea --url "${{ matrix.baseUrl }}" --token "${{ env.TEST_TOKEN }}" || true
 
       - name: Cleanup - Delete release
         if: always()
         run: |
           if [ "${{ matrix.platform }}" == "github" ]; then
-            # GitHub cleanup using GitHub CLI
             REPO="${{ matrix.repo }}"
             gh release delete "${{ steps.test_tag.outputs.tag }}" --repo "$REPO" --yes || true
             gh api -X DELETE "/repos/$REPO/git/refs/tags/${{ steps.test_tag.outputs.tag }}" || true
           else
-            # Gitea cleanup using Tea CLI
             REPO="${{ matrix.repoPath }}"
             TAG="${{ steps.test_tag.outputs.tag }}"
-            
             echo "Deleting Gitea release: ${TAG} from ${REPO}"
-            # Delete release and tag using Tea CLI
             tea release delete "${TAG}" --confirm --delete-tag --repo "${REPO}" || true
             echo "✅ Cleaned up Gitea release: ${TAG}"
           fi

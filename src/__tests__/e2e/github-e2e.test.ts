@@ -9,22 +9,20 @@ import { ActionInputs, ReleaseConfig } from '../../types';
 import { Logger } from '../../logger';
 import { cleanupRelease, generateTestTag } from './cleanup';
 
-describe('GitHub E2E Tests', () => {
-  const TEST_REPO = process.env.TEST_GITHUB_REPO || 'LiquidLogicLabs/git-action-release-tests';
-  // Use GITHUB_TOKEN from environment (set in TEST environment as TEST_GITHUB_TOKEN)
-  const TEST_TOKEN = process.env.GITHUB_TOKEN;
-  const [testOwner, testRepo] = TEST_REPO.split('/');
+const TEST_REPO = process.env.TEST_GITHUB_REPO || 'LiquidLogicLabs/git-action-release-tests';
+const TEST_TOKEN = process.env.TEST_GITHUB_TOKEN || process.env.GITHUB_TOKEN;
+const [testOwner, testRepo] = TEST_REPO.split('/');
 
+describe('GitHub E2E Tests', () => {
   let provider: GitHubProvider;
   let testTag: string;
 
   beforeAll(() => {
     if (!TEST_TOKEN) {
-      throw new Error('GITHUB_TOKEN required for GitHub E2E tests');
+      throw new Error('GITHUB_TOKEN or TEST_GITHUB_TOKEN required for e2e');
     }
-
     provider = new GitHubProvider({
-      token: TEST_TOKEN,
+      token: TEST_TOKEN as string,
       owner: testOwner,
       repo: testRepo,
       logger: new Logger(process.env.VERBOSE === 'true'),
@@ -130,7 +128,6 @@ describe('GitHub E2E Tests', () => {
     if (!TEST_TOKEN) {
       throw new Error('GITHUB_TOKEN is required');
     }
-
     const inputs: ActionInputs = {
       token: TEST_TOKEN,
       tag: testTag,

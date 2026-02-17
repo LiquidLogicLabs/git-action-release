@@ -13,7 +13,7 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "test:all": "jest --testPathIgnorePatterns=node_modules",
-    "lint": "eslint src/**/*.ts --no-warn-ignored",
+    "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix",
     "format": "prettier --write \"src/**/*.ts\"",
     "test:act": "act --container-options \"--user $(id -u):$(id -g)\" --env-file .act.env --var-file .act.vars --secret-file .act.secrets workflow_dispatch -W .github/workflows/test.yml --eventpath .github/workflows/.act/event-workflow_call.json",
