@@ -161,6 +161,7 @@ jobs:
 
 | Input | Description | Required | Default |
 |-------|-------------|----------|---------|
+| `repository` | Repository in owner/repo format (e.g., LiquidLogicLabs/git-action-release). If provided, takes precedence over owner and repo inputs | No | - |
 | `owner` | Optionally specify the owner of the repo where the release should be generated. Defaults to current repo owner | No | - |
 | `repo` | Optionally specify the repo where the release should be generated. Defaults to current repo | No | - |
 | `omit-body` | Indicates if the release body should be omitted | No | `false` |
@@ -169,6 +170,7 @@ jobs:
 | `omit-name` | Indicates if the release name should be omitted | No | `false` |
 | `omit-name-during-update` | Indicates if the release name should be omitted during updates | No | `false` |
 | `omit-prerelease-during-update` | Indicates if the prerelease flag should be omitted during updates | No | `false` |
+| `skip-certificate-check` | Skip TLS certificate verification for API calls (self-hosted instances) | No | `false` |
 | `verbose` | Enable verbose debug logging | No | `false` |
 
 ## Outputs
