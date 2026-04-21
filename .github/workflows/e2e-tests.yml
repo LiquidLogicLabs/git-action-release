@@ -57,7 +57,7 @@ jobs:
 
       - name: Checkout action code
         if: steps.skip.outputs.skip != 'true'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install GitHub CLI (GitHub only)
         if: steps.skip.outputs.skip != 'true' && matrix.platform == 'github'
