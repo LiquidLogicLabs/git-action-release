@@ -55458,6 +55458,7 @@ const core = __importStar(__nccwpck_require__(7484));
 const fs = __importStar(__nccwpck_require__(9896));
 const path = __importStar(__nccwpck_require__(6928));
 const glob_1 = __nccwpck_require__(1363);
+const errors_1 = __nccwpck_require__(6550);
 /**
  * Release manager coordinates release operations via provider interface
  */
@@ -55506,7 +55507,7 @@ class ReleaseManager {
                 }
             }
             catch (error) {
-                this.logger.warning(`Failed to generate release notes: ${error.message}`);
+                this.logger.warning(`Failed to generate release notes: ${(0, errors_1.errorMessage)(error)}`);
                 // Continue without release notes
             }
         }
@@ -55623,7 +55624,7 @@ class ReleaseManager {
                 expandedPaths.push(...matches);
             }
             catch (error) {
-                this.logger.warning(`Failed to expand glob pattern ${pattern}: ${error.message}`);
+                this.logger.warning(`Failed to expand glob pattern ${pattern}: ${(0, errors_1.errorMessage)(error)}`);
                 // Try as literal path
                 if (fs.existsSync(pattern)) {
                     expandedPaths.push(pattern);
@@ -55648,7 +55649,7 @@ class ReleaseManager {
                     if (this.config.artifactErrorsFailBuild) {
                         throw error;
                     }
-                    this.logger.warning(`Failed to remove asset ${asset.name}: ${error.message}`);
+                    this.logger.warning(`Failed to remove asset ${asset.name}: ${(0, errors_1.errorMessage)(error)}`);
                 }
             }
         }
@@ -55666,7 +55667,7 @@ class ReleaseManager {
                         if (this.config.artifactErrorsFailBuild) {
                             throw error;
                         }
-                        this.logger.warning(`Failed to remove asset ${asset.name}: ${error.message}`);
+                        this.logger.warning(`Failed to remove asset ${asset.name}: ${(0, errors_1.errorMessage)(error)}`);
                     }
                 }
             }
@@ -55707,7 +55708,7 @@ class ReleaseManager {
                 if (this.config.artifactErrorsFailBuild) {
                     throw error;
                 }
-                this.logger.warning(`Failed to upload asset ${assetPath}: ${error.message}`);
+                this.logger.warning(`Failed to upload asset ${assetPath}: ${(0, errors_1.errorMessage)(error)}`);
             }
         }
         // Update release with assets if needed
@@ -55732,6 +55733,28 @@ class ReleaseManager {
     }
 }
 exports.ReleaseManager = ReleaseManager;
+
+
+/***/ }),
+
+/***/ 6550:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.errorMessage = errorMessage;
+/**
+ * Narrow an unknown error (from a catch clause) to a user-facing message.
+ * Used when we want to log or include the error in a user-facing string
+ * without casting to `any` and without asserting its type.
+ */
+function errorMessage(error) {
+    if (error instanceof Error) {
+        return error.message;
+    }
+    return String(error);
+}
 
 
 /***/ }),

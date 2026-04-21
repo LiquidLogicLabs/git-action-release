@@ -4,6 +4,7 @@ import * as path from 'path';
 import { glob } from 'glob';
 import { IProvider, ReleaseConfig, ReleaseResult, AssetConfig, ActionInputs } from './types';
 import { Logger } from './logger';
+import { errorMessage } from './utils/errors';
 
 /**
  * Release manager coordinates release operations via provider interface
@@ -62,8 +63,8 @@ export class ReleaseManager {
         if (releaseNotes) {
           releaseConfig.body = releaseNotes;
         }
-      } catch (error: any) {
-        this.logger.warning(`Failed to generate release notes: ${error.message}`);
+      } catch (error: unknown) {
+        this.logger.warning(`Failed to generate release notes: ${errorMessage(error)}`);
         // Continue without release notes
       }
     }
@@ -194,8 +195,8 @@ export class ReleaseManager {
       try {
         const matches = await glob(pattern);
         expandedPaths.push(...matches);
-      } catch (error: any) {
-        this.logger.warning(`Failed to expand glob pattern ${pattern}: ${error.message}`);
+      } catch (error: unknown) {
+        this.logger.warning(`Failed to expand glob pattern ${pattern}: ${errorMessage(error)}`);
         // Try as literal path
         if (fs.existsSync(pattern)) {
           expandedPaths.push(pattern);
@@ -218,11 +219,11 @@ export class ReleaseManager {
         try {
           await this.provider.deleteAsset(asset.id);
           this.logger.info(`Removed existing asset: ${asset.name}`);
-        } catch (error: any) {
+        } catch (error: unknown) {
           if (this.config.artifactErrorsFailBuild) {
             throw error;
           }
-          this.logger.warning(`Failed to remove asset ${asset.name}: ${error.message}`);
+          this.logger.warning(`Failed to remove asset ${asset.name}: ${errorMessage(error)}`);
         }
       }
     } else if (this.config.replacesArtifacts) {
@@ -235,11 +236,11 @@ export class ReleaseManager {
           try {
             await this.provider.deleteAsset(asset.id);
             this.logger.info(`Removed existing asset: ${asset.name}`);
-          } catch (error: any) {
+          } catch (error: unknown) {
             if (this.config.artifactErrorsFailBuild) {
               throw error;
             }
-            this.logger.warning(`Failed to remove asset ${asset.name}: ${error.message}`);
+            this.logger.warning(`Failed to remove asset ${asset.name}: ${errorMessage(error)}`);
           }
         }
       }
@@ -284,11 +285,11 @@ export class ReleaseManager {
           uploadedAssets[assetConfig.name] = downloadUrl;
         }
         this.logger.info(`Uploaded asset: ${assetConfig.name || assetPath}`);
-      } catch (error: any) {
+      } catch (error: unknown) {
         if (this.config.artifactErrorsFailBuild) {
           throw error;
         }
-        this.logger.warning(`Failed to upload asset ${assetPath}: ${error.message}`);
+        this.logger.warning(`Failed to upload asset ${assetPath}: ${errorMessage(error)}`);
       }
     }
 

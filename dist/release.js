@@ -38,6 +38,7 @@ const core = __importStar(require("@actions/core"));
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
 const glob_1 = require("glob");
+const errors_1 = require("./utils/errors");
 /**
  * Release manager coordinates release operations via provider interface
  */
@@ -86,7 +87,7 @@ class ReleaseManager {
                 }
             }
             catch (error) {
-                this.logger.warning(`Failed to generate release notes: ${error.message}`);
+                this.logger.warning(`Failed to generate release notes: ${(0, errors_1.errorMessage)(error)}`);
                 // Continue without release notes
             }
         }
@@ -203,7 +204,7 @@ class ReleaseManager {
                 expandedPaths.push(...matches);
             }
             catch (error) {
-                this.logger.warning(`Failed to expand glob pattern ${pattern}: ${error.message}`);
+                this.logger.warning(`Failed to expand glob pattern ${pattern}: ${(0, errors_1.errorMessage)(error)}`);
                 // Try as literal path
                 if (fs.existsSync(pattern)) {
                     expandedPaths.push(pattern);
@@ -228,7 +229,7 @@ class ReleaseManager {
                     if (this.config.artifactErrorsFailBuild) {
                         throw error;
                     }
-                    this.logger.warning(`Failed to remove asset ${asset.name}: ${error.message}`);
+                    this.logger.warning(`Failed to remove asset ${asset.name}: ${(0, errors_1.errorMessage)(error)}`);
                 }
             }
         }
@@ -246,7 +247,7 @@ class ReleaseManager {
                         if (this.config.artifactErrorsFailBuild) {
                             throw error;
                         }
-                        this.logger.warning(`Failed to remove asset ${asset.name}: ${error.message}`);
+                        this.logger.warning(`Failed to remove asset ${asset.name}: ${(0, errors_1.errorMessage)(error)}`);
                     }
                 }
             }
@@ -287,7 +288,7 @@ class ReleaseManager {
                 if (this.config.artifactErrorsFailBuild) {
                     throw error;
                 }
-                this.logger.warning(`Failed to upload asset ${assetPath}: ${error.message}`);
+                this.logger.warning(`Failed to upload asset ${assetPath}: ${(0, errors_1.errorMessage)(error)}`);
             }
         }
         // Update release with assets if needed
