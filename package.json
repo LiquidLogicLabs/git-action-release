@@ -53,7 +53,7 @@
   "author": "LiquidLogicLabs",
   "license": "MIT",
   "dependencies": {
-    "@actions/core": "^1.11.1",
+    "@actions/core": "^2.0.3",
     "git-platform-detector": "https://git.ravenwolf.org/api/packages/liquidlogiclabs/npm/git-platform-detector/-/git-platform-detector-1.1.4.tgz",
     "glob": "^10.3.10",
     "undici": "^6.21.1"
