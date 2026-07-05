@@ -37473,7 +37473,11 @@ const isStream = (s) => !!s &&
     (s instanceof Minipass ||
         s instanceof node_stream_1.default ||
         (0, exports.isReadable)(s) ||
-        (0, exports.isWritable)(s));
+        (0, exports.isWritable)(s))
+/**
+ * Return true if the argument is a valid {@link Minipass.Readable}
+ */
+;
 exports.isStream = isStream;
 /**
  * Return true if the argument is a valid {@link Minipass.Readable}
@@ -37483,7 +37487,11 @@ const isReadable = (s) => !!s &&
     s instanceof node_events_1.EventEmitter &&
     typeof s.pipe === 'function' &&
     // node core Writable streams have a pipe() method, but it throws
-    s.pipe !== node_stream_1.default.Writable.prototype.pipe;
+    s.pipe !== node_stream_1.default.Writable.prototype.pipe
+/**
+ * Return true if the argument is a valid {@link Minipass.Writable}
+ */
+;
 exports.isReadable = isReadable;
 /**
  * Return true if the argument is a valid {@link Minipass.Writable}
@@ -37580,7 +37588,7 @@ class PipeProxyErrors extends Pipe {
     }
     constructor(src, dest, opts) {
         super(src, dest, opts);
-        this.proxyErrors = er => dest.emit('error', er);
+        this.proxyErrors = (er) => this.dest.emit('error', er);
         src.on('error', this.proxyErrors);
     }
 }
@@ -38390,6 +38398,7 @@ class Minipass extends node_events_1.EventEmitter {
             [Symbol.asyncIterator]() {
                 return this;
             },
+            [Symbol.asyncDispose]: async () => { },
         };
     }
     /**
@@ -38427,6 +38436,7 @@ class Minipass extends node_events_1.EventEmitter {
             [Symbol.iterator]() {
                 return this;
             },
+            [Symbol.dispose]: () => { },
         };
     }
     /**

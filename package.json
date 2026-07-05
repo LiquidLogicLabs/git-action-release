@@ -16,6 +16,9 @@
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix",
     "format": "prettier --write \"src/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\"",
+    "typecheck": "tsc --noEmit",
+    "clean": "rimraf dist coverage *.tsbuildinfo",
     "test:act": "act --container-options \"--user $(id -u):$(id -g)\" --env-file .act.env --var-file .act.vars --secret-file .act.secrets workflow_dispatch -W .github/workflows/test.yml --eventpath .github/workflows/.act/event-workflow_call.json",
     "test:act:verbose": "act --container-options \"--user $(id -u):$(id -g)\" --env-file .act.env --var-file .act.vars --secret-file .act.secrets workflow_dispatch -W .github/workflows/test.yml --eventpath .github/workflows/.act/event-workflow_call.json -v",
     "test:act:ci": "act --container-options \"--user $(id -u):$(id -g)\" --env-file .act.env --var-file .act.vars --secret-file .act.secrets -W .github/workflows/ci.yml",
@@ -70,6 +73,7 @@
     "husky": "^9.1.7",
     "jest": "^29.7.0",
     "prettier": "^3.6.2",
+    "rimraf": "^6.0.1",
     "ts-jest": "^29.1.2",
     "typescript": "^5.9.3"
   }
