@@ -16,9 +16,14 @@ permissions:
 
 jobs:
   test:
-    # Always run when called via workflow_call or workflow_dispatch
-    # This workflow only has workflow_call and workflow_dispatch triggers, so it should always run
-    if: github.event_name == 'workflow_call' || github.event_name == 'workflow_dispatch'
+    # No condition here on purpose. This workflow has only workflow_call and
+    # workflow_dispatch triggers, so it already cannot run any other way.
+    # It previously carried:
+    #   if: github.event_name == 'workflow_call' || github.event_name == 'workflow_dispatch'
+    # In a reusable workflow github.event_name is the CALLER's original event, never
+    # 'workflow_call'. On a push or a release tag it is 'push', so the condition was false
+    # and this job skipped — and a skipped job satisfies `needs:`, so release.yml's
+    # "CI and E2E must pass before release" was being satisfied by tests that never ran.
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
