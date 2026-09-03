@@ -14,7 +14,7 @@
     "test:coverage": "jest --coverage",
     "test:all": "jest --testPathIgnorePatterns=node_modules",
     "lint": "eslint \"src/**/*.ts\"",
-    "lint:fix": "eslint src/**/*.ts --fix",
+    "lint:fix": "eslint \"src/**/*.ts\" --fix",
     "format": "prettier --write \"src/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.ts\"",
     "typecheck": "tsc --noEmit",
