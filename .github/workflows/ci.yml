@@ -61,7 +61,7 @@ jobs:
       - name: Lint workflows
         # Scoped to ci.yml in Phase 0; Phase 1 fixes release.yml/e2e-tests.yml
         # shellcheck findings and removes the scoping.
-        uses: docker://rhysd/actionlint:latest
+        uses: docker://rhysd/actionlint:1.7.12
         with:
           args: -color .github/workflows/ci.yml
 

@@ -1,4 +1,7 @@
 # Reviewed historical findings only. Each was confirmed to be either the
+# revoked token or a verified false positive.
+# NOTE: the dist/index.js doc-example false positive is allowlisted BY PATH in
+# .gitleaks.toml, not fingerprinted here - fingerprints shift on every rebuild.
 # Gitea token committed in early 2026 and REVOKED 2026-09-02, or a verified
 # false positive. History is deliberately not rewritten: these commits are
 # ancestors of released tags that consumers pin to.
