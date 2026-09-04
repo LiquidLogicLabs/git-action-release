@@ -1,3 +1,12 @@
+## [2.0.7](https://github.com/LiquidLogicLabs/git-action-release/compare/v2.0.6...v2.0.7) (2026-09-04)
+
+
+### Bug Fixes
+
+* **ci:** restore secrets: inherit on the e2e-tests call ([ec73768](https://github.com/LiquidLogicLabs/git-action-release/commit/ec737688eabb06334e41fff72e4440b6ed779f08))
+
+
+
 ## [2.0.6](https://github.com/LiquidLogicLabs/git-action-release/compare/v2.0.5...v2.0.6) (2026-09-04)
 
 
