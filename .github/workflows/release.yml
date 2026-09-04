@@ -36,13 +36,23 @@ jobs:
   e2e-tests:
     needs: ci  # E2E tests run after CI passes
     # See the note on the ci job above; act rejects `$/`.
-    uses: ./.github/workflows/e2e-tests.yml  # zizmor: ignore[self-repository]
-    # No `secrets:` block on purpose. The only secrets e2e-tests.yml reads
-    # (TEST_GITHUB_TOKEN, TEST_GITEA_TOKEN) are ENVIRONMENT secrets of the TEST
-    # environment -- verified against the repository's environment secret list. Its job
-    # declares `environment: TEST` and resolves them itself. This workflow has no
-    # environment, so `${{ secrets.TEST_GITHUB_TOKEN }}` here would expand to the empty
-    # string; passing it explicitly would break E2E rather than secure it.
+    uses: ./.github/workflows/e2e-tests.yml  # zizmor: ignore[self-repository,secrets-inherit]
+    # The secrets-inherit marker above (a JOB-level uses: only honours a trailing
+    # marker, not a comment above it) — inherit is the only mechanism that works here,
+    # and this was established empirically, not assumed.
+    #
+    # e2e-tests.yml reads TEST_GITHUB_TOKEN and TEST_GITEA_TOKEN. Both are ENVIRONMENT
+    # secrets of the TEST environment (checked against the repository's environment
+    # secret list); neither exists at repository or organisation level. So they cannot
+    # be passed explicitly: a job that calls a reusable workflow may not declare
+    # `environment:`, and in this caller `${{ secrets.TEST_GITHUB_TOKEN }}` expands to
+    # the empty string.
+    #
+    # Dropping the block entirely does not work either, even though the callee's job
+    # does declare `environment: TEST`. Release run 33900517466 was built that way and
+    # its GitHub E2E cell failed at "Test - Create release" with `TEST_TOKEN:` logged
+    # empty; the same cell passed in run 33881117739, which used inherit.
+    secrets: inherit
 
   release:
     permissions:
