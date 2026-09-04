@@ -47,24 +47,35 @@ jobs:
     steps:
       - name: Skip if Gitea not configured
         id: skip
+        env:
+          Z_MATRIX_PLATFORM: ${{ matrix.platform }}
+          Z_VARS_TEST_GITEA_REPO: ${{ vars.TEST_GITEA_REPO }}
+          Z_MATRIX_REPO: ${{ matrix.repo }}
         run: |
           # Skip Gitea cell when repo is placeholder (var was empty) or var is unset
-          if [ "${{ matrix.platform }}" = "gitea" ] && { [ -z "${{ vars.TEST_GITEA_REPO }}" ] || [ "${{ matrix.repo }}" = "skip" ]; }; then
-            echo "skip=true" >> $GITHUB_OUTPUT
+          if [ "${Z_MATRIX_PLATFORM}" = "gitea" ] && { [ -z "${Z_VARS_TEST_GITEA_REPO}" ] || [ "${Z_MATRIX_REPO}" = "skip" ]; }; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
           else
-            echo "skip=false" >> $GITHUB_OUTPUT
+            echo "skip=false" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Checkout action code
         if: steps.skip.outputs.skip != 'true'
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          # No step in this job pushes to this repository; the release/tag operations
+          # in this job target the separate test repository using TEST_TOKEN.
+          persist-credentials: false
 
       - name: Install GitHub CLI (GitHub only)
         if: steps.skip.outputs.skip != 'true' && matrix.platform == 'github'
-        uses: sersoft-gmbh/setup-gh-cli-action@v3
+        uses: sersoft-gmbh/setup-gh-cli-action@3cb41a4434ca35de4d1c16e00dc7e16d38409494 # v3
 
       - name: Install Tea CLI (Gitea only)
         if: steps.skip.outputs.skip != 'true' && matrix.platform == 'gitea'
+        # zizmor: ignore[unpinned-uses] — first-party action; no Renovate or
+        # Dependabot exists in these repos, so a SHA pin would freeze it and stop
+        # security fixes reaching us through @v2.
         uses: LiquidLogicLabs/git-action-install-gitea-tea@v2
         with:
           version: 'latest'
@@ -74,15 +85,19 @@ jobs:
       - name: Generate unique test tag
         if: steps.skip.outputs.skip != 'true'
         id: test_tag
+        env:
+          Z_MATRIX_PLATFORM: ${{ matrix.platform }}
+          Z_RUN_ID: ${{ github.run_id }}
+          Z_RUN_ATTEMPT: ${{ github.run_attempt }}
         run: |
-          TEST_TAG="test-e2e-${{ matrix.platform }}-${{ github.run_id }}-${{ github.run_attempt }}-$(date +%s)"
-          echo "tag=$TEST_TAG" >> $GITHUB_OUTPUT
+          TEST_TAG="test-e2e-${Z_MATRIX_PLATFORM}-${Z_RUN_ID}-${Z_RUN_ATTEMPT}-$(date +%s)"
+          echo "tag=$TEST_TAG" >> "$GITHUB_OUTPUT"
           echo "Generated test tag: $TEST_TAG"
 
       - name: Test - Create release
         if: steps.skip.outputs.skip != 'true'
         id: create_release
-        uses: ./
+        uses: ./  # zizmor: ignore[self-repository] — local ACTION reference under test, not a reusable-workflow call; $/ does not apply
         with:
           token: ${{ env.TEST_TOKEN }}
           platform: ${{ matrix.platform }}
@@ -94,23 +109,26 @@ jobs:
 
       - name: Verify release outputs
         if: steps.skip.outputs.skip != 'true'
+        env:
+          Z_CREATE_RELEASE_OUTPUTS_ID: ${{ steps.create_release.outputs.id }}
+          Z_CREATE_RELEASE_OUTPUTS_HTML_URL: ${{ steps.create_release.outputs.html-url }}
         run: |
-          if [ -z "${{ steps.create_release.outputs.id }}" ]; then
+          if [ -z "${Z_CREATE_RELEASE_OUTPUTS_ID}" ]; then
             echo "❌ Release ID is missing"
             exit 1
           fi
-          if [ -z "${{ steps.create_release.outputs.html-url }}" ]; then
+          if [ -z "${Z_CREATE_RELEASE_OUTPUTS_HTML_URL}" ]; then
             echo "❌ Release HTML URL is missing"
             exit 1
           fi
           echo "✅ Release created successfully"
-          echo "  ID: ${{ steps.create_release.outputs.id }}"
-          echo "  URL: ${{ steps.create_release.outputs.html-url }}"
+          echo "  ID: ${Z_CREATE_RELEASE_OUTPUTS_ID}"
+          echo "  URL: ${Z_CREATE_RELEASE_OUTPUTS_HTML_URL}"
 
       - name: Test - Update release
         if: steps.skip.outputs.skip != 'true'
         id: update_release
-        uses: ./
+        uses: ./  # zizmor: ignore[self-repository] — local ACTION reference under test, not a reusable-workflow call; $/ does not apply
         with:
           token: ${{ env.TEST_TOKEN }}
           platform: ${{ matrix.platform }}
@@ -122,8 +140,11 @@ jobs:
 
       - name: Verify update outputs
         if: steps.skip.outputs.skip != 'true'
+        env:
+          Z_UPDATE_RELEASE_OUTPUTS_ID: ${{ steps.update_release.outputs.id }}
+          Z_CREATE_RELEASE_OUTPUTS_ID: ${{ steps.create_release.outputs.id }}
         run: |
-          if [ "${{ steps.update_release.outputs.id }}" != "${{ steps.create_release.outputs.id }}" ]; then
+          if [ "${Z_UPDATE_RELEASE_OUTPUTS_ID}" != "${Z_CREATE_RELEASE_OUTPUTS_ID}" ]; then
             echo "❌ Release ID changed during update (expected same ID)"
             exit 1
           fi
@@ -131,23 +152,33 @@ jobs:
 
       - name: Configure Tea CLI (Gitea only)
         if: steps.skip.outputs.skip != 'true' && matrix.platform == 'gitea'
+        env:
+          Z_MATRIX_BASEURL: ${{ matrix.baseUrl }}
+          Z_TEST_TOKEN: ${{ env.TEST_TOKEN }}
         run: |
-          echo "Configuring Tea CLI for ${{ matrix.baseUrl }}"
-          tea login add --name gitea --url "${{ matrix.baseUrl }}" --token "${{ env.TEST_TOKEN }}" || true
+          echo "Configuring Tea CLI for ${Z_MATRIX_BASEURL}"
+          tea login add --name gitea --url "${Z_MATRIX_BASEURL}" --token "${Z_TEST_TOKEN}" || true
 
       - name: Cleanup - Delete release
         if: always() && steps.skip.outputs.skip != 'true'
+        env:
+          # Merged into the single env: block this step already had. The hoist aid appends
+          # a second one before run:, and YAML accepts a duplicate key silently (last wins)
+          # -- actionlint is what catches it.
+          GITHUB_TOKEN: ${{ matrix.platform == 'github' && env.TEST_TOKEN || '' }}
+          Z_MATRIX_PLATFORM: ${{ matrix.platform }}
+          Z_MATRIX_REPO: ${{ matrix.repo }}
+          Z_TEST_TAG_OUTPUTS_TAG: ${{ steps.test_tag.outputs.tag }}
+          Z_MATRIX_REPOPATH: ${{ matrix.repoPath }}
         run: |
-          if [ "${{ matrix.platform }}" == "github" ]; then
-            REPO="${{ matrix.repo }}"
-            gh release delete "${{ steps.test_tag.outputs.tag }}" --repo "$REPO" --yes || true
-            gh api -X DELETE "/repos/$REPO/git/refs/tags/${{ steps.test_tag.outputs.tag }}" || true
+          if [ "${Z_MATRIX_PLATFORM}" == "github" ]; then
+            REPO="${Z_MATRIX_REPO}"
+            gh release delete "${Z_TEST_TAG_OUTPUTS_TAG}" --repo "$REPO" --yes || true
+            gh api -X DELETE "/repos/$REPO/git/refs/tags/${Z_TEST_TAG_OUTPUTS_TAG}" || true
           else
-            REPO="${{ matrix.repoPath }}"
-            TAG="${{ steps.test_tag.outputs.tag }}"
+            REPO="${Z_MATRIX_REPOPATH}"
+            TAG="${Z_TEST_TAG_OUTPUTS_TAG}"
             echo "Deleting Gitea release: ${TAG} from ${REPO}"
             tea release delete "${TAG}" --confirm --delete-tag --repo "${REPO}" || true
             echo "✅ Cleaned up Gitea release: ${TAG}"
           fi
-        env:
-          GITHUB_TOKEN: ${{ matrix.platform == 'github' && env.TEST_TOKEN || '' }}
