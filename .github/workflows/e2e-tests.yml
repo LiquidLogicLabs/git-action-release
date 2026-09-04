@@ -13,7 +13,14 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: write  # Required to create tags and releases
+  # contents: read, not write. Every release/tag this workflow creates targets the
+  # separate TEST repository and is authenticated with TEST_TOKEN, never GITHUB_TOKEN --
+  # nothing here writes to this repository.
+  #
+  # It also cannot be `write` any more: release.yml now runs on a `contents: read` floor
+  # (R8), and a called reusable workflow may not request more than its caller was granted.
+  # Leaving `write` here made the v2.0.5 Release run fail at startup in 1s with no logs.
+  contents: read
 
 jobs:
   e2e:
