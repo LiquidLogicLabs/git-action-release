@@ -119,12 +119,24 @@ jobs:
 
       - name: Generate release notes
         id: release_notes
+        # The Usage snippet below must show a literal `${{ secrets.GITHUB_TOKEN }}`.
+        # Written plainly, Actions expands it before this action ever sees the string and
+        # the published release body carries the job's ephemeral `ghs_` installation token
+        # -- which is what every release of this repository up to v2.0.7 did.
+        #
+        # The `$` is therefore written as the JSON escape \u0024. The value is raw
+        # workflow text when Actions scans it for expressions, and `{{ ... }}` with no
+        # leading `$` is not an expression, so nothing is expanded. This action then
+        # JSON-parses the value, \u0024 becomes `$`, and readers see the real snippet.
+        # (`${{ '${{' }}` also prevents the expansion, but zizmor reports it as
+        # obfuscation and the finding anchors inside the block scalar, where no ignore
+        # marker can be placed.)
         uses: mikepenz/release-changelog-builder-action@cb021f9b36a51a7c6f18e4679b6fa2cb77a1260c # v6
         with:
           mode: "HYBRID"
           configurationJson: |
             {
-              "template": "#{{CHANGELOG}}\n\n<details>\n<summary>Pull Requests</summary>\n\n#{{PR_LIST}}\n</details>\n\n---\n\n### Usage\n\n```yaml\n- uses: LiquidLogicLabs/git-action-release@${{ github.ref_name }}\n  with:\n    tag: 'v1.0.0'\n    token: ${{ secrets.GITHUB_TOKEN }}\n```"
+              "template": "#{{CHANGELOG}}\n\n<details>\n<summary>Pull Requests</summary>\n\n#{{PR_LIST}}\n</details>\n\n---\n\n### Usage\n\n```yaml\n- uses: LiquidLogicLabs/git-action-release@${{ github.ref_name }}\n  with:\n    tag: 'v1.0.0'\n    token: \u0024{{ secrets.GITHUB_TOKEN }}\n```"
             }
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
