@@ -37,6 +37,7 @@ exports.GitHubProvider = void 0;
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
 const provider_1 = require("./provider");
+const repository_1 = require("../utils/repository");
 /**
  * GitHub provider implementation
  */
@@ -75,7 +76,7 @@ class GitHubProvider extends provider_1.BaseProvider {
                 delete releaseData[key];
             }
         });
-        const url = `${this.apiBaseUrl}/repos/${this.owner}/${config.repo || this.repo}/releases`;
+        const url = `${this.apiBaseUrl}/repos/${(0, repository_1.safeSegment)(this.owner, 'owner')}/${(0, repository_1.safeSegment)(config.repo || this.repo, 'repo')}/releases`;
         const { data } = await this.request(url, {
             method: 'POST',
             body: JSON.stringify(releaseData),
@@ -110,7 +111,7 @@ class GitHubProvider extends provider_1.BaseProvider {
         if (config.prerelease !== undefined) {
             releaseData.prerelease = config.prerelease;
         }
-        const url = `${this.apiBaseUrl}/repos/${this.owner}/${this.repo}/releases/${releaseId}`;
+        const url = `${this.apiBaseUrl}/repos/${(0, repository_1.safeSegment)(this.owner, 'owner')}/${(0, repository_1.safeSegment)(this.repo, 'repo')}/releases/${(0, repository_1.safeSegment)(releaseId, 'releaseId')}`;
         const { data } = await this.request(url, {
             method: 'PATCH',
             body: JSON.stringify(releaseData),
@@ -136,7 +137,7 @@ class GitHubProvider extends provider_1.BaseProvider {
         this.logger.debug(`Getting GitHub release by tag: ${tag}`);
         try {
             // Try the direct tag endpoint first (works for published releases)
-            const url = `${this.apiBaseUrl}/repos/${this.owner}/${this.repo}/releases/tags/${tag}`;
+            const url = `${this.apiBaseUrl}/repos/${(0, repository_1.safeSegment)(this.owner, 'owner')}/${(0, repository_1.safeSegment)(this.repo, 'repo')}/releases/tags/${(0, repository_1.safeSegment)(tag, 'tag')}`;
             const { data } = await this.request(url, {
                 method: 'GET',
             });
@@ -172,7 +173,7 @@ class GitHubProvider extends provider_1.BaseProvider {
                             this.logger.debug(`Retry ${attempt}/${maxRetries - 1} to find draft release by tag: ${tag}`);
                             await new Promise((resolve) => setTimeout(resolve, retryDelay));
                         }
-                        const listUrl = `${this.apiBaseUrl}/repos/${this.owner}/${this.repo}/releases?per_page=100`;
+                        const listUrl = `${this.apiBaseUrl}/repos/${(0, repository_1.safeSegment)(this.owner, 'owner')}/${(0, repository_1.safeSegment)(this.repo, 'repo')}/releases?per_page=100`;
                         const { data: releases } = await this.request(listUrl, {
                             method: 'GET',
                         });
@@ -258,7 +259,7 @@ class GitHubProvider extends provider_1.BaseProvider {
      */
     async deleteAsset(assetId) {
         this.logger.debug(`Deleting GitHub asset: ${assetId}`);
-        const url = `${this.apiBaseUrl}/repos/${this.owner}/${this.repo}/releases/assets/${assetId}`;
+        const url = `${this.apiBaseUrl}/repos/${(0, repository_1.safeSegment)(this.owner, 'owner')}/${(0, repository_1.safeSegment)(this.repo, 'repo')}/releases/assets/${(0, repository_1.safeSegment)(assetId, 'assetId')}`;
         await this.request(url, {
             method: 'DELETE',
         });
@@ -269,7 +270,7 @@ class GitHubProvider extends provider_1.BaseProvider {
      */
     async listAssets(releaseId) {
         this.logger.debug(`Listing assets for GitHub release: ${releaseId}`);
-        const url = `${this.apiBaseUrl}/repos/${this.owner}/${this.repo}/releases/${releaseId}/assets`;
+        const url = `${this.apiBaseUrl}/repos/${(0, repository_1.safeSegment)(this.owner, 'owner')}/${(0, repository_1.safeSegment)(this.repo, 'repo')}/releases/${(0, repository_1.safeSegment)(releaseId, 'releaseId')}/assets`;
         const { data } = await this.request(url, {
             method: 'GET',
         });
@@ -285,7 +286,7 @@ class GitHubProvider extends provider_1.BaseProvider {
     async createTag(tag, commit, message) {
         this.logger.debug(`Creating GitHub tag: ${tag} at commit: ${commit}`);
         // First create a git tag ref
-        const refUrl = `${this.apiBaseUrl}/repos/${this.owner}/${this.repo}/git/refs`;
+        const refUrl = `${this.apiBaseUrl}/repos/${(0, repository_1.safeSegment)(this.owner, 'owner')}/${(0, repository_1.safeSegment)(this.repo, 'repo')}/git/refs`;
         await this.request(refUrl, {
             method: 'POST',
             body: JSON.stringify({
@@ -295,7 +296,7 @@ class GitHubProvider extends provider_1.BaseProvider {
         });
         // If message is provided, create an annotated tag
         if (message) {
-            const tagUrl = `${this.apiBaseUrl}/repos/${this.owner}/${this.repo}/git/tags`;
+            const tagUrl = `${this.apiBaseUrl}/repos/${(0, repository_1.safeSegment)(this.owner, 'owner')}/${(0, repository_1.safeSegment)(this.repo, 'repo')}/git/tags`;
             const { data: tagData } = await this.request(tagUrl, {
                 method: 'POST',
                 body: JSON.stringify({
@@ -306,7 +307,7 @@ class GitHubProvider extends provider_1.BaseProvider {
                 }),
             });
             // Update the ref to point to the annotated tag
-            const updateRefUrl = `${this.apiBaseUrl}/repos/${this.owner}/${this.repo}/git/refs/tags/${tag}`;
+            const updateRefUrl = `${this.apiBaseUrl}/repos/${(0, repository_1.safeSegment)(this.owner, 'owner')}/${(0, repository_1.safeSegment)(this.repo, 'repo')}/git/refs/tags/${(0, repository_1.safeSegment)(tag, 'tag')}`;
             await this.request(updateRefUrl, {
                 method: 'PATCH',
                 body: JSON.stringify({
@@ -321,7 +322,7 @@ class GitHubProvider extends provider_1.BaseProvider {
      */
     async generateReleaseNotes(tag, previousTag) {
         this.logger.debug(`Generating GitHub release notes for tag: ${tag}`);
-        const url = `${this.apiBaseUrl}/repos/${this.owner}/${this.repo}/releases/generate-notes`;
+        const url = `${this.apiBaseUrl}/repos/${(0, repository_1.safeSegment)(this.owner, 'owner')}/${(0, repository_1.safeSegment)(this.repo, 'repo')}/releases/generate-notes`;
         const body = {
             tag_name: tag,
         };

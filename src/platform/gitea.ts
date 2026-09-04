@@ -3,6 +3,7 @@ import * as path from 'path';
 import { BaseProvider } from './provider';
 import { ReleaseConfig, ReleaseResult, AssetConfig } from '../types';
 import { Logger } from '../logger';
+import { safeSegment } from '../utils/repository';
 
 /**
  * Gitea provider implementation
@@ -48,7 +49,7 @@ export class GiteaProvider extends BaseProvider {
    */
   private async getDefaultBranchSha(): Promise<string> {
     this.logger.debug('Getting default branch HEAD SHA from Gitea');
-    const repoUrl = `${this.apiBaseUrl}/repos/${this.owner}/${this.repo}`;
+    const repoUrl = `${this.apiBaseUrl}/repos/${safeSegment(this.owner, 'owner')}/${safeSegment(this.repo, 'repo')}`;
     const { data: repoData } = await this.request<{
       default_branch: string;
     }>(repoUrl, {
@@ -59,7 +60,7 @@ export class GiteaProvider extends BaseProvider {
       throw new Error('Could not determine default branch from repository');
     }
 
-    const branchUrl = `${this.apiBaseUrl}/repos/${this.owner}/${this.repo}/git/refs/heads/${repoData.default_branch}`;
+    const branchUrl = `${this.apiBaseUrl}/repos/${safeSegment(this.owner, 'owner')}/${safeSegment(this.repo, 'repo')}/git/refs/heads/${safeSegment(repoData.default_branch, 'defaultbranch')}`;
     const { data: branchData } = await this.request<{
       ref?: string;
       object?: { sha: string; type?: string; url?: string };
@@ -80,7 +81,7 @@ export class GiteaProvider extends BaseProvider {
    */
   private async tagExists(tag: string): Promise<boolean> {
     try {
-      const url = `${this.apiBaseUrl}/repos/${this.owner}/${this.repo}/git/refs/tags/${tag}`;
+      const url = `${this.apiBaseUrl}/repos/${safeSegment(this.owner, 'owner')}/${safeSegment(this.repo, 'repo')}/git/refs/tags/${safeSegment(tag, 'tag')}`;
       await this.request(url, {
         method: 'GET',
       });
@@ -144,7 +145,7 @@ export class GiteaProvider extends BaseProvider {
       }
     });
 
-    const url = `${this.apiBaseUrl}/repos/${this.owner}/${config.repo || this.repo}/releases`;
+    const url = `${this.apiBaseUrl}/repos/${safeSegment(this.owner, 'owner')}/${safeSegment(config.repo || this.repo, 'repo')}/releases`;
     const { data } = await this.request<{
       id: number;
       html_url: string;
@@ -221,7 +222,7 @@ export class GiteaProvider extends BaseProvider {
 
   private async findReleaseInList(tag: string): Promise<ReleaseResult | null> {
     try {
-      const url = `${this.apiBaseUrl}/repos/${this.owner}/${this.repo}/releases`;
+      const url = `${this.apiBaseUrl}/repos/${safeSegment(this.owner, 'owner')}/${safeSegment(this.repo, 'repo')}/releases`;
       const { data } = await this.request<
         Array<{
           id: number;
@@ -288,7 +289,7 @@ export class GiteaProvider extends BaseProvider {
       releaseData.prerelease = config.prerelease;
     }
 
-    const url = `${this.apiBaseUrl}/repos/${this.owner}/${this.repo}/releases/${releaseId}`;
+    const url = `${this.apiBaseUrl}/repos/${safeSegment(this.owner, 'owner')}/${safeSegment(this.repo, 'repo')}/releases/${safeSegment(releaseId, 'releaseId')}`;
     const { data } = await this.request<{
       id: number;
       html_url: string;
@@ -339,7 +340,7 @@ export class GiteaProvider extends BaseProvider {
 
     try {
       // Gitea API uses tag name in the path
-      const url = `${this.apiBaseUrl}/repos/${this.owner}/${this.repo}/releases/tags/${tag}`;
+      const url = `${this.apiBaseUrl}/repos/${safeSegment(this.owner, 'owner')}/${safeSegment(this.repo, 'repo')}/releases/tags/${safeSegment(tag, 'tag')}`;
       this.logger.debug(`Gitea API URL: ${url}`);
       this.logger.debug(`getReleaseByTag - Full URL components: apiBaseUrl=${this.apiBaseUrl}, owner=${this.owner}, repo=${this.repo}, tag=${tag}`);
       const { data } = await this.request<{
@@ -417,7 +418,7 @@ export class GiteaProvider extends BaseProvider {
     };
 
     // Use the upload_url provided by Gitea (it already includes the release ID)
-    const url = uploadUrl || `${this.apiBaseUrl}/repos/${this.owner}/${this.repo}/releases/${releaseId}/assets`;
+    const url = uploadUrl || `${this.apiBaseUrl}/repos/${safeSegment(this.owner, 'owner')}/${safeSegment(this.repo, 'repo')}/releases/${safeSegment(releaseId, 'releaseId')}/assets`;
 
     // Note: When using FormData, don't set Content-Type - fetch will set it with boundary automatically
     const response = await fetch(url, this.buildFetchOptions({
@@ -442,7 +443,7 @@ export class GiteaProvider extends BaseProvider {
   async deleteAsset(assetId: string): Promise<void> {
     this.logger.debug(`Deleting Gitea asset: ${assetId}`);
 
-    const url = `${this.apiBaseUrl}/repos/${this.owner}/${this.repo}/releases/attachments/${assetId}`;
+    const url = `${this.apiBaseUrl}/repos/${safeSegment(this.owner, 'owner')}/${safeSegment(this.repo, 'repo')}/releases/attachments/${safeSegment(assetId, 'assetId')}`;
     await this.request(url, {
       method: 'DELETE',
     });
@@ -459,7 +460,7 @@ export class GiteaProvider extends BaseProvider {
     const release = await this.getReleaseByTag(releaseId);
     if (!release) {
       // Try getting by ID
-      const url = `${this.apiBaseUrl}/repos/${this.owner}/${this.repo}/releases/${releaseId}`;
+      const url = `${this.apiBaseUrl}/repos/${safeSegment(this.owner, 'owner')}/${safeSegment(this.repo, 'repo')}/releases/${safeSegment(releaseId, 'releaseId')}`;
       const { data } = await this.request<{
         assets: Array<{ id: number; name: string; browser_download_url: string }>;
       }>(url, {
@@ -486,7 +487,7 @@ export class GiteaProvider extends BaseProvider {
   async createTag(tag: string, commit: string, message?: string): Promise<void> {
     this.logger.debug(`Creating Gitea tag: ${tag} at commit: ${commit}`);
 
-    const url = `${this.apiBaseUrl}/repos/${this.owner}/${this.repo}/tags`;
+    const url = `${this.apiBaseUrl}/repos/${safeSegment(this.owner, 'owner')}/${safeSegment(this.repo, 'repo')}/tags`;
     await this.request(url, {
       method: 'POST',
       body: JSON.stringify({

@@ -32646,6 +32646,7 @@ exports.GiteaProvider = void 0;
 const fs = __importStar(__nccwpck_require__(9896));
 const path = __importStar(__nccwpck_require__(6928));
 const provider_1 = __nccwpck_require__(6790);
+const repository_1 = __nccwpck_require__(6629);
 /**
  * Gitea provider implementation
  */
@@ -32676,14 +32677,14 @@ class GiteaProvider extends provider_1.BaseProvider {
      */
     async getDefaultBranchSha() {
         this.logger.debug('Getting default branch HEAD SHA from Gitea');
-        const repoUrl = `${this.apiBaseUrl}/repos/${this.owner}/${this.repo}`;
+        const repoUrl = `${this.apiBaseUrl}/repos/${(0, repository_1.safeSegment)(this.owner, 'owner')}/${(0, repository_1.safeSegment)(this.repo, 'repo')}`;
         const { data: repoData } = await this.request(repoUrl, {
             method: 'GET',
         });
         if (!repoData?.default_branch) {
             throw new Error('Could not determine default branch from repository');
         }
-        const branchUrl = `${this.apiBaseUrl}/repos/${this.owner}/${this.repo}/git/refs/heads/${repoData.default_branch}`;
+        const branchUrl = `${this.apiBaseUrl}/repos/${(0, repository_1.safeSegment)(this.owner, 'owner')}/${(0, repository_1.safeSegment)(this.repo, 'repo')}/git/refs/heads/${(0, repository_1.safeSegment)(repoData.default_branch, 'defaultbranch')}`;
         const { data: branchData } = await this.request(branchUrl, {
             method: 'GET',
         });
@@ -32698,7 +32699,7 @@ class GiteaProvider extends provider_1.BaseProvider {
      */
     async tagExists(tag) {
         try {
-            const url = `${this.apiBaseUrl}/repos/${this.owner}/${this.repo}/git/refs/tags/${tag}`;
+            const url = `${this.apiBaseUrl}/repos/${(0, repository_1.safeSegment)(this.owner, 'owner')}/${(0, repository_1.safeSegment)(this.repo, 'repo')}/git/refs/tags/${(0, repository_1.safeSegment)(tag, 'tag')}`;
             await this.request(url, {
                 method: 'GET',
             });
@@ -32752,7 +32753,7 @@ class GiteaProvider extends provider_1.BaseProvider {
                 delete releaseData[key];
             }
         });
-        const url = `${this.apiBaseUrl}/repos/${this.owner}/${config.repo || this.repo}/releases`;
+        const url = `${this.apiBaseUrl}/repos/${(0, repository_1.safeSegment)(this.owner, 'owner')}/${(0, repository_1.safeSegment)(config.repo || this.repo, 'repo')}/releases`;
         const { data } = await this.request(url, {
             method: 'POST',
             body: JSON.stringify(releaseData),
@@ -32809,7 +32810,7 @@ class GiteaProvider extends provider_1.BaseProvider {
     }
     async findReleaseInList(tag) {
         try {
-            const url = `${this.apiBaseUrl}/repos/${this.owner}/${this.repo}/releases`;
+            const url = `${this.apiBaseUrl}/repos/${(0, repository_1.safeSegment)(this.owner, 'owner')}/${(0, repository_1.safeSegment)(this.repo, 'repo')}/releases`;
             const { data } = await this.request(url, { method: 'GET' });
             const found = data.find((release) => release.tag_name === tag);
             if (!found) {
@@ -32853,7 +32854,7 @@ class GiteaProvider extends provider_1.BaseProvider {
         if (config.prerelease !== undefined) {
             releaseData.prerelease = config.prerelease;
         }
-        const url = `${this.apiBaseUrl}/repos/${this.owner}/${this.repo}/releases/${releaseId}`;
+        const url = `${this.apiBaseUrl}/repos/${(0, repository_1.safeSegment)(this.owner, 'owner')}/${(0, repository_1.safeSegment)(this.repo, 'repo')}/releases/${(0, repository_1.safeSegment)(releaseId, 'releaseId')}`;
         const { data } = await this.request(url, {
             method: 'PATCH',
             body: JSON.stringify(releaseData),
@@ -32891,7 +32892,7 @@ class GiteaProvider extends provider_1.BaseProvider {
         this.logger.debug(`getReleaseByTag - apiBaseUrl: ${this.apiBaseUrl}, owner: ${this.owner}, repo: ${this.repo}, tag: ${tag}`);
         try {
             // Gitea API uses tag name in the path
-            const url = `${this.apiBaseUrl}/repos/${this.owner}/${this.repo}/releases/tags/${tag}`;
+            const url = `${this.apiBaseUrl}/repos/${(0, repository_1.safeSegment)(this.owner, 'owner')}/${(0, repository_1.safeSegment)(this.repo, 'repo')}/releases/tags/${(0, repository_1.safeSegment)(tag, 'tag')}`;
             this.logger.debug(`Gitea API URL: ${url}`);
             this.logger.debug(`getReleaseByTag - Full URL components: apiBaseUrl=${this.apiBaseUrl}, owner=${this.owner}, repo=${this.repo}, tag=${tag}`);
             const { data } = await this.request(url, {
@@ -32947,7 +32948,7 @@ class GiteaProvider extends provider_1.BaseProvider {
             // Don't set Content-Type - FormData will set it with boundary automatically
         };
         // Use the upload_url provided by Gitea (it already includes the release ID)
-        const url = uploadUrl || `${this.apiBaseUrl}/repos/${this.owner}/${this.repo}/releases/${releaseId}/assets`;
+        const url = uploadUrl || `${this.apiBaseUrl}/repos/${(0, repository_1.safeSegment)(this.owner, 'owner')}/${(0, repository_1.safeSegment)(this.repo, 'repo')}/releases/${(0, repository_1.safeSegment)(releaseId, 'releaseId')}/assets`;
         // Note: When using FormData, don't set Content-Type - fetch will set it with boundary automatically
         const response = await fetch(url, this.buildFetchOptions({
             method: 'POST',
@@ -32967,7 +32968,7 @@ class GiteaProvider extends provider_1.BaseProvider {
      */
     async deleteAsset(assetId) {
         this.logger.debug(`Deleting Gitea asset: ${assetId}`);
-        const url = `${this.apiBaseUrl}/repos/${this.owner}/${this.repo}/releases/attachments/${assetId}`;
+        const url = `${this.apiBaseUrl}/repos/${(0, repository_1.safeSegment)(this.owner, 'owner')}/${(0, repository_1.safeSegment)(this.repo, 'repo')}/releases/attachments/${(0, repository_1.safeSegment)(assetId, 'assetId')}`;
         await this.request(url, {
             method: 'DELETE',
         });
@@ -32981,7 +32982,7 @@ class GiteaProvider extends provider_1.BaseProvider {
         const release = await this.getReleaseByTag(releaseId);
         if (!release) {
             // Try getting by ID
-            const url = `${this.apiBaseUrl}/repos/${this.owner}/${this.repo}/releases/${releaseId}`;
+            const url = `${this.apiBaseUrl}/repos/${(0, repository_1.safeSegment)(this.owner, 'owner')}/${(0, repository_1.safeSegment)(this.repo, 'repo')}/releases/${(0, repository_1.safeSegment)(releaseId, 'releaseId')}`;
             const { data } = await this.request(url, {
                 method: 'GET',
             });
@@ -33002,7 +33003,7 @@ class GiteaProvider extends provider_1.BaseProvider {
      */
     async createTag(tag, commit, message) {
         this.logger.debug(`Creating Gitea tag: ${tag} at commit: ${commit}`);
-        const url = `${this.apiBaseUrl}/repos/${this.owner}/${this.repo}/tags`;
+        const url = `${this.apiBaseUrl}/repos/${(0, repository_1.safeSegment)(this.owner, 'owner')}/${(0, repository_1.safeSegment)(this.repo, 'repo')}/tags`;
         await this.request(url, {
             method: 'POST',
             body: JSON.stringify({
@@ -33111,6 +33112,7 @@ exports.GitHubProvider = void 0;
 const fs = __importStar(__nccwpck_require__(9896));
 const path = __importStar(__nccwpck_require__(6928));
 const provider_1 = __nccwpck_require__(6790);
+const repository_1 = __nccwpck_require__(6629);
 /**
  * GitHub provider implementation
  */
@@ -33149,7 +33151,7 @@ class GitHubProvider extends provider_1.BaseProvider {
                 delete releaseData[key];
             }
         });
-        const url = `${this.apiBaseUrl}/repos/${this.owner}/${config.repo || this.repo}/releases`;
+        const url = `${this.apiBaseUrl}/repos/${(0, repository_1.safeSegment)(this.owner, 'owner')}/${(0, repository_1.safeSegment)(config.repo || this.repo, 'repo')}/releases`;
         const { data } = await this.request(url, {
             method: 'POST',
             body: JSON.stringify(releaseData),
@@ -33184,7 +33186,7 @@ class GitHubProvider extends provider_1.BaseProvider {
         if (config.prerelease !== undefined) {
             releaseData.prerelease = config.prerelease;
         }
-        const url = `${this.apiBaseUrl}/repos/${this.owner}/${this.repo}/releases/${releaseId}`;
+        const url = `${this.apiBaseUrl}/repos/${(0, repository_1.safeSegment)(this.owner, 'owner')}/${(0, repository_1.safeSegment)(this.repo, 'repo')}/releases/${(0, repository_1.safeSegment)(releaseId, 'releaseId')}`;
         const { data } = await this.request(url, {
             method: 'PATCH',
             body: JSON.stringify(releaseData),
@@ -33210,7 +33212,7 @@ class GitHubProvider extends provider_1.BaseProvider {
         this.logger.debug(`Getting GitHub release by tag: ${tag}`);
         try {
             // Try the direct tag endpoint first (works for published releases)
-            const url = `${this.apiBaseUrl}/repos/${this.owner}/${this.repo}/releases/tags/${tag}`;
+            const url = `${this.apiBaseUrl}/repos/${(0, repository_1.safeSegment)(this.owner, 'owner')}/${(0, repository_1.safeSegment)(this.repo, 'repo')}/releases/tags/${(0, repository_1.safeSegment)(tag, 'tag')}`;
             const { data } = await this.request(url, {
                 method: 'GET',
             });
@@ -33246,7 +33248,7 @@ class GitHubProvider extends provider_1.BaseProvider {
                             this.logger.debug(`Retry ${attempt}/${maxRetries - 1} to find draft release by tag: ${tag}`);
                             await new Promise((resolve) => setTimeout(resolve, retryDelay));
                         }
-                        const listUrl = `${this.apiBaseUrl}/repos/${this.owner}/${this.repo}/releases?per_page=100`;
+                        const listUrl = `${this.apiBaseUrl}/repos/${(0, repository_1.safeSegment)(this.owner, 'owner')}/${(0, repository_1.safeSegment)(this.repo, 'repo')}/releases?per_page=100`;
                         const { data: releases } = await this.request(listUrl, {
                             method: 'GET',
                         });
@@ -33332,7 +33334,7 @@ class GitHubProvider extends provider_1.BaseProvider {
      */
     async deleteAsset(assetId) {
         this.logger.debug(`Deleting GitHub asset: ${assetId}`);
-        const url = `${this.apiBaseUrl}/repos/${this.owner}/${this.repo}/releases/assets/${assetId}`;
+        const url = `${this.apiBaseUrl}/repos/${(0, repository_1.safeSegment)(this.owner, 'owner')}/${(0, repository_1.safeSegment)(this.repo, 'repo')}/releases/assets/${(0, repository_1.safeSegment)(assetId, 'assetId')}`;
         await this.request(url, {
             method: 'DELETE',
         });
@@ -33343,7 +33345,7 @@ class GitHubProvider extends provider_1.BaseProvider {
      */
     async listAssets(releaseId) {
         this.logger.debug(`Listing assets for GitHub release: ${releaseId}`);
-        const url = `${this.apiBaseUrl}/repos/${this.owner}/${this.repo}/releases/${releaseId}/assets`;
+        const url = `${this.apiBaseUrl}/repos/${(0, repository_1.safeSegment)(this.owner, 'owner')}/${(0, repository_1.safeSegment)(this.repo, 'repo')}/releases/${(0, repository_1.safeSegment)(releaseId, 'releaseId')}/assets`;
         const { data } = await this.request(url, {
             method: 'GET',
         });
@@ -33359,7 +33361,7 @@ class GitHubProvider extends provider_1.BaseProvider {
     async createTag(tag, commit, message) {
         this.logger.debug(`Creating GitHub tag: ${tag} at commit: ${commit}`);
         // First create a git tag ref
-        const refUrl = `${this.apiBaseUrl}/repos/${this.owner}/${this.repo}/git/refs`;
+        const refUrl = `${this.apiBaseUrl}/repos/${(0, repository_1.safeSegment)(this.owner, 'owner')}/${(0, repository_1.safeSegment)(this.repo, 'repo')}/git/refs`;
         await this.request(refUrl, {
             method: 'POST',
             body: JSON.stringify({
@@ -33369,7 +33371,7 @@ class GitHubProvider extends provider_1.BaseProvider {
         });
         // If message is provided, create an annotated tag
         if (message) {
-            const tagUrl = `${this.apiBaseUrl}/repos/${this.owner}/${this.repo}/git/tags`;
+            const tagUrl = `${this.apiBaseUrl}/repos/${(0, repository_1.safeSegment)(this.owner, 'owner')}/${(0, repository_1.safeSegment)(this.repo, 'repo')}/git/tags`;
             const { data: tagData } = await this.request(tagUrl, {
                 method: 'POST',
                 body: JSON.stringify({
@@ -33380,7 +33382,7 @@ class GitHubProvider extends provider_1.BaseProvider {
                 }),
             });
             // Update the ref to point to the annotated tag
-            const updateRefUrl = `${this.apiBaseUrl}/repos/${this.owner}/${this.repo}/git/refs/tags/${tag}`;
+            const updateRefUrl = `${this.apiBaseUrl}/repos/${(0, repository_1.safeSegment)(this.owner, 'owner')}/${(0, repository_1.safeSegment)(this.repo, 'repo')}/git/refs/tags/${(0, repository_1.safeSegment)(tag, 'tag')}`;
             await this.request(updateRefUrl, {
                 method: 'PATCH',
                 body: JSON.stringify({
@@ -33395,7 +33397,7 @@ class GitHubProvider extends provider_1.BaseProvider {
      */
     async generateReleaseNotes(tag, previousTag) {
         this.logger.debug(`Generating GitHub release notes for tag: ${tag}`);
-        const url = `${this.apiBaseUrl}/repos/${this.owner}/${this.repo}/releases/generate-notes`;
+        const url = `${this.apiBaseUrl}/repos/${(0, repository_1.safeSegment)(this.owner, 'owner')}/${(0, repository_1.safeSegment)(this.repo, 'repo')}/releases/generate-notes`;
         const body = {
             tag_name: tag,
         };
@@ -33850,12 +33852,36 @@ function errorMessage(error) {
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.parseRepository = parseRepository;
+exports.safeSegment = safeSegment;
 function parseRepository(repository) {
     const parts = repository.split('/').filter(Boolean);
     if (parts.length !== 2) {
         throw new Error(`Invalid repository format: ${repository}. Expected format: owner/repo`);
     }
     return { owner: parts[0], repo: parts[1] };
+}
+/**
+ * Encode a value for use as a single path segment in an API URL.
+ *
+ * Interpolating a value straight into a path lets it redirect the request. Verified against
+ * WHATWG URL resolution, which is what fetch applies:
+ *
+ *   `/repos/o/r/git/refs/tags/${'../../../user'}`  =>  /repos/o/user
+ *   `/repos/o/r/git/refs/tags/${'..'}`             =>  /repos/o/r/git/refs/
+ *
+ * This action issues DELETE and PATCH against these paths, so a redirected request acts on
+ * the collection rather than on one item.
+ *
+ * encodeURIComponent is necessary but not sufficient: it does not encode dots, so a bare
+ * "." or ".." survives it unchanged and is then removed by dot-segment normalisation. Those
+ * two are refused outright rather than encoded, because no legitimate tag, owner, repo or
+ * id is named "." or "..".
+ */
+function safeSegment(value, label) {
+    if (value === '.' || value === '..') {
+        throw new Error(`Refusing to use ${JSON.stringify(value)} as a ${label}: it would redirect the request to a different endpoint.`);
+    }
+    return encodeURIComponent(value);
 }
 
 
