@@ -1,3 +1,12 @@
+## [2.0.6](https://github.com/LiquidLogicLabs/git-action-release/compare/v2.0.5...v2.0.6) (2026-09-04)
+
+
+### Bug Fixes
+
+* **ci:** drop e2e-tests.yml to a contents: read permission ([73bb2a9](https://github.com/LiquidLogicLabs/git-action-release/commit/73bb2a98f496f34de4086ebdadbd7b9ec8a0dfec))
+
+
+
 ## [2.0.5](https://github.com/LiquidLogicLabs/git-action-release/compare/v2.0.4...v2.0.5) (2026-09-04)
 
 
