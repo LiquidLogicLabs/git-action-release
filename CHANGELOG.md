@@ -1,3 +1,15 @@
+## [2.0.4](https://github.com/LiquidLogicLabs/git-action-release/compare/v2.0.3...v2.0.4) (2026-09-04)
+
+
+### Bug Fixes
+
+* **ci:** pin actionlint, anchor gitleaks allowlist, clarify baseline header ([7d3444a](https://github.com/LiquidLogicLabs/git-action-release/commit/7d3444a71090908172e109594e26d645031dcafb))
+* encode every value interpolated into an API URL path ([d5aded7](https://github.com/LiquidLogicLabs/git-action-release/commit/d5aded79c2691c97000bb47a7585d0c51c0229a1))
+* **lint:** quote eslint glob so all of src/ is linted ([eb34ed5](https://github.com/LiquidLogicLabs/git-action-release/commit/eb34ed54db85cca214e487aee98230a12db5377d))
+* **lint:** quote lint:fix glob too ([0041b75](https://github.com/LiquidLogicLabs/git-action-release/commit/0041b758e714814aa9d563d843ab2db4a5edc0af))
+
+
+
 ## [2.0.3](https://github.com/LiquidLogicLabs/git-action-release/compare/v2.0.2...v2.0.3) (2026-07-05)
 
 
