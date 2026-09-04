@@ -1,3 +1,12 @@
+## [2.0.8](https://github.com/LiquidLogicLabs/git-action-release/compare/v2.0.7...v2.0.8) (2026-09-04)
+
+
+### Bug Fixes
+
+* **release:** stop publishing a live GITHUB_TOKEN in the release notes ([fae01f9](https://github.com/LiquidLogicLabs/git-action-release/commit/fae01f9537ac2fd4f1362e37fb3c0c3bc0c2d8b8))
+
+
+
 ## [2.0.7](https://github.com/LiquidLogicLabs/git-action-release/compare/v2.0.6...v2.0.7) (2026-09-04)
 
 
