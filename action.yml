@@ -1,4 +1,4 @@
-name: 'Multi-Platform Release Action'
+name: 'Git Multi-Platform Release Action'
 description: 'Create and manage releases on GitHub and Gitea (including self-hosted instances)'
 author: 'LiquidLogicLabs'
 inputs:
