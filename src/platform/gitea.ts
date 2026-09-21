@@ -47,6 +47,58 @@ export class GiteaProvider extends BaseProvider {
   /**
    * Get the default branch HEAD SHA
    */
+  /**
+   * The commit SHA from the runner environment, but ONLY when the workflow is running
+   * on the same forge host this provider targets.
+   *
+   * GITHUB_SHA is the *running workflow's* commit. It is the right tag target when the
+   * release is for the repository the workflow lives in, and it is cheaper than an API
+   * call. It is meaningless when the target is a different repository, and Gitea then
+   * rejects the tag with:
+   *
+   *   404 target not found: object does not exist [id: <sha>, rel_path: ]
+   *
+   * The check compares HOSTS, not owner/repo. `this.owner` and `this.repo` fall back to
+   * GITHUB_REPOSITORY_OWNER / GITHUB_REPOSITORY in the constructor, so comparing them
+   * against those same variables self-matches whenever they were env-derived. Host
+   * comparison also catches the mirror case, where the same owner/repo name exists on
+   * both GitHub and a Gitea instance.
+   *
+   * When the forge cannot be proven the SHA is not trusted: falling back to the target's
+   * default-branch HEAD may tag a different commit than intended, but it always names a
+   * commit that exists in the target repository.
+   */
+  private trustedEnvCommitSha(): string | undefined {
+    const sha = process.env.GITHUB_SHA || process.env.GITEA_SHA;
+    if (!sha) {
+      return undefined;
+    }
+
+    const serverUrl = process.env.GITHUB_SERVER_URL || process.env.GITEA_SERVER_URL;
+    if (!serverUrl) {
+      this.logger.debug('Ignoring environment commit SHA: no server URL to prove the workflow runs on the target forge');
+      return undefined;
+    }
+
+    let serverHost: string;
+    let targetHost: string;
+    try {
+      serverHost = new URL(serverUrl).host;
+      targetHost = new URL(this.apiBaseUrl).host;
+    } catch {
+      this.logger.debug('Ignoring environment commit SHA: server or target URL could not be parsed');
+      return undefined;
+    }
+
+    if (serverHost !== targetHost) {
+      this.logger.debug(`Ignoring environment commit SHA: workflow runs on ${serverHost} but the target is ${targetHost}`);
+      return undefined;
+    }
+
+    this.logger.debug(`Using commit SHA from environment: ${sha.substring(0, 7)}... (workflow and target share host ${targetHost})`);
+    return sha;
+  }
+
   private async getDefaultBranchSha(): Promise<string> {
     this.logger.debug('Getting default branch HEAD SHA from Gitea');
     const repoUrl = `${this.apiBaseUrl}/repos/${safeSegment(this.owner, 'owner')}/${safeSegment(this.repo, 'repo')}`;
@@ -107,18 +159,10 @@ export class GiteaProvider extends BaseProvider {
     const tagExists = await this.tagExists(config.tag);
     if (!tagExists) {
       this.logger.debug(`Tag ${config.tag} does not exist, creating it first`);
-      // Get commit SHA: use provided commit, or try GITHUB_SHA/GITEA_SHA, or get default branch HEAD
-      let commitSha = config.commit;
-      if (!commitSha) {
-        // Try environment variables first (faster, no API call needed)
-        commitSha = process.env.GITHUB_SHA || process.env.GITEA_SHA;
-        if (!commitSha) {
-          // Fall back to getting default branch HEAD SHA
-          commitSha = await this.getDefaultBranchSha();
-        } else {
-          this.logger.debug(`Using commit SHA from environment: ${commitSha.substring(0, 7)}...`);
-        }
-      }
+      // Commit SHA, in order of trust: the explicit input, then the runner environment
+      // but only when it provably refers to this same forge (see trustedEnvCommitSha),
+      // then the target repository's default-branch HEAD.
+      const commitSha = config.commit || this.trustedEnvCommitSha() || (await this.getDefaultBranchSha());
       await this.createTag(config.tag, commitSha, `Release ${config.tag}`);
       this.logger.info(`Created tag ${config.tag} at ${commitSha}`);
     }

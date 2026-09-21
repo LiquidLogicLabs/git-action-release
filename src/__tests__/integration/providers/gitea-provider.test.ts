@@ -41,8 +41,15 @@ describe('GiteaProvider Integration Tests', () => {
   const testRepo = 'test-repo';
   const apiBaseUrl = `${testBaseUrl}/api/v1`;
 
+  let originalServerUrl: string | undefined;
+
   beforeEach(() => {
     fetchMock.setup();
+    // The env-SHA path now requires proof that the workflow runs on the forge being
+    // targeted (GiteaProvider.trustedEnvCommitSha). Tests that set GITHUB_SHA to avoid
+    // the default-branch lookup need a matching host, or they fall through to it.
+    originalServerUrl = process.env.GITHUB_SERVER_URL;
+    process.env.GITHUB_SERVER_URL = testBaseUrl;
     provider = new GiteaProvider({
       token: testToken,
       baseUrl: testBaseUrl,
@@ -53,11 +60,101 @@ describe('GiteaProvider Integration Tests', () => {
   });
 
   afterEach(() => {
+    if (originalServerUrl === undefined) {
+      delete process.env.GITHUB_SERVER_URL;
+    } else {
+      process.env.GITHUB_SERVER_URL = originalServerUrl;
+    }
     fetchMock.reset();
     jest.clearAllMocks();
   });
 
   describe('createRelease', () => {
+
+    describe('commit SHA chosen for the tag', () => {
+      const ENV_SHA = 'e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0';
+      const DEFAULT_BRANCH_SHA = 'd1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1';
+
+      // Returns the `target` the tag-creation POST actually sent.
+      const tagTargetAfterCreateRelease = async (): Promise<string | undefined> => {
+        fetchMock.mock404(`${apiBaseUrl}/repos/${testOwner}/${testRepo}/git/refs/tags/v9.9.9`);
+        // Anchored: string matchers use url.includes(), so the bare repo URL would also
+        // swallow /git/refs/heads/main and every other sub-path.
+        fetchMock.mockResponse(
+          new RegExp(`/repos/${testOwner}/${testRepo}$`),
+          { status: 200, data: { default_branch: 'main' } }
+        );
+        fetchMock.mockResponse(
+          `${apiBaseUrl}/repos/${testOwner}/${testRepo}/git/refs/heads/main`,
+          { status: 200, data: { ref: 'refs/heads/main', object: { sha: DEFAULT_BRANCH_SHA, type: 'commit' } } }
+        );
+        fetchMock.mockResponse(`${apiBaseUrl}/repos/${testOwner}/${testRepo}/tags`, {
+          status: 201,
+          data: giteaResponses.createTag,
+        });
+        fetchMock.mockResponse(`${apiBaseUrl}/repos/${testOwner}/${testRepo}/releases`, {
+          status: 201,
+          data: giteaResponses.createRelease,
+        });
+
+        await provider.createRelease(createMockReleaseConfig({ tag: 'v9.9.9', name: 'v9.9.9' }));
+
+        const tagCall = fetchMock
+          .getCalls()
+          .find((c) => c.url.endsWith('/tags') && (c.method || 'GET').toUpperCase() === 'POST');
+        const body = typeof tagCall?.body === 'string' ? JSON.parse(tagCall.body) : tagCall?.body;
+        return body?.target;
+      };
+
+      it('uses the environment SHA when the workflow runs on the target host', async () => {
+        process.env.GITHUB_SHA = ENV_SHA;
+        process.env.GITHUB_SERVER_URL = testBaseUrl; // same host as the provider target
+        await expect(tagTargetAfterCreateRelease()).resolves.toBe(ENV_SHA);
+        delete process.env.GITHUB_SHA;
+      });
+
+      it('ignores the environment SHA when the workflow runs on a different host', async () => {
+        // The real defect: a GitHub-hosted runner releasing to a Gitea repo. GITHUB_SHA is
+        // the action repo's commit and does not exist in the target, so Gitea answered
+        // 404 "target not found: object does not exist".
+        process.env.GITHUB_SHA = ENV_SHA;
+        process.env.GITHUB_SERVER_URL = 'https://github.com';
+        await expect(tagTargetAfterCreateRelease()).resolves.toBe(DEFAULT_BRANCH_SHA);
+        delete process.env.GITHUB_SHA;
+      });
+
+      it("ignores the environment SHA when the forge cannot be proven", async () => {
+        process.env.GITHUB_SHA = ENV_SHA;
+        delete process.env.GITHUB_SERVER_URL;
+        await expect(tagTargetAfterCreateRelease()).resolves.toBe(DEFAULT_BRANCH_SHA);
+        delete process.env.GITHUB_SHA;
+      });
+
+      it('prefers an explicit commit input over both', async () => {
+        process.env.GITHUB_SHA = ENV_SHA;
+        process.env.GITHUB_SERVER_URL = testBaseUrl;
+        fetchMock.mock404(`${apiBaseUrl}/repos/${testOwner}/${testRepo}/git/refs/tags/v8.8.8`);
+        fetchMock.mockResponse(`${apiBaseUrl}/repos/${testOwner}/${testRepo}/tags`, {
+          status: 201,
+          data: giteaResponses.createTag,
+        });
+        fetchMock.mockResponse(`${apiBaseUrl}/repos/${testOwner}/${testRepo}/releases`, {
+          status: 201,
+          data: giteaResponses.createRelease,
+        });
+
+        await provider.createRelease(
+          createMockReleaseConfig({ tag: 'v8.8.8', name: 'v8.8.8', commit: 'deadbeefdeadbeefdeadbeefdeadbeefdeadbeef' })
+        );
+
+        const tagCall = fetchMock
+          .getCalls()
+          .find((c) => c.url.endsWith('/tags') && (c.method || 'GET').toUpperCase() === 'POST');
+        const body = typeof tagCall?.body === 'string' ? JSON.parse(tagCall.body) : tagCall?.body;
+        expect(body?.target).toBe('deadbeefdeadbeefdeadbeefdeadbeefdeadbeef');
+        delete process.env.GITHUB_SHA;
+      });
+    });
     it('should create a release successfully', async () => {
       // Set GITHUB_SHA for the test (will be used as fallback)
       const originalSha = process.env.GITHUB_SHA;
