@@ -1,0 +1,36 @@
+# TEMPORARY diagnostic. Delete after use.
+# Answers: why does git.ravenwolf.org return nginx 410 to GitHub-hosted runners
+# when the same request from inside the network, and from the public edge, is fine?
+name: _diag gitea reachability
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  diag:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Probe both hosts from the runner
+        run: |
+          echo "### runner egress IP"
+          curl -s --max-time 20 https://api.ipify.org || true; echo
+
+          for h in git.ravenwolf.org gcr.ravenwolf.org; do
+            echo
+            echo "### $h"
+            echo "-- DNS as the runner sees it"
+            getent hosts "$h" || echo "   (no result)"
+            echo "-- GET /api/v1/version (status only)"
+            curl -s -o /dev/null -w '   HTTP %{http_code}  ip=%{remote_ip}\n' \
+              --max-time 20 "https://$h/api/v1/version" || echo "   request failed"
+            echo "-- response headers"
+            curl -sI --max-time 20 "https://$h/api/v1/version" | head -15 || true
+          done
+
+          echo
+          echo "### the exact endpoint the action calls (unauthenticated, expect 401/404 not 410)"
+          curl -s -o /dev/null -w '   HTTP %{http_code}\n' --max-time 20 \
+            "https://git.ravenwolf.org/api/v1/repos/liquidlogiclabs/git-action-release-tests/releases" || true
