@@ -56,8 +56,16 @@ jobs:
     permissions:
       contents: write   # creates the release and moves the floating tags
     needs: [ci, e2e-tests]
-    # Proceed when CI passed; allow release even if e2e-tests failed (e.g. Gitea unconfigured)
-    if: always() && !cancelled() && needs.ci.result == 'success'
+    # Both gates are REQUIRED; there is deliberately no `if:` here, so a failed or
+    # skipped e2e-tests blocks the release.
+    #
+    # The previous `if: always() && !cancelled() && needs.ci.result == 'success'`
+    # allowed a release on failed E2E, justified as "Gitea unconfigured". Gitea was
+    # not unconfigured: TEST_GITEA_REPO existed as a TEST-environment variable, and
+    # strategy.matrix cannot read environment-scoped vars, so the matrix fell back to
+    # the literal 'skip' and the cell passed without testing anything. The config is
+    # now a repository-level variable, which the matrix can read, so the exemption
+    # has no remaining justification.
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code

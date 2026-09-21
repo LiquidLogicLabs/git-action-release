@@ -38,7 +38,10 @@ jobs:
             repoPath: ${{ vars.TEST_GITHUB_REPO || 'LiquidLogicLabs/git-action-release-tests' }}
           - platform: gitea
             repo: ${{ vars.TEST_GITEA_REPO || 'skip' }}
-            baseUrl: ${{ vars.TEST_GITEA_BASE_URL || 'https://git.ravenwolf.org' }}
+            # vars.TEST_GITEA_URL, not TEST_GITEA_BASE_URL: Infisical holds both, and
+            # TEST_GITEA_BASE_URL there is the /api/v1 endpoint. The values below feed
+            # GITEA_SERVER_URL and the tea install, which need the server root.
+            baseUrl: ${{ vars.TEST_GITEA_URL || 'https://git.ravenwolf.org' }}
             repoPath: ${{ vars.TEST_GITEA_REPO_PATH || vars.TEST_GITEA_REPO || 'skip' }}
     env:
       TEST_TOKEN: ${{ matrix.platform == 'github' && secrets.TEST_GITHUB_TOKEN || secrets.TEST_GITEA_TOKEN }}
