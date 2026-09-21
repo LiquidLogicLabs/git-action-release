@@ -29,17 +29,6 @@ jobs:
   e2e:
     runs-on: ubuntu-latest
     environment: TEST
-    # The Gitea cell is advisory, the GitHub cell is required. git.ravenwolf.org is
-    # behind a proxy that answers GitHub-hosted runners with nginx 410 Gone before the
-    # request reaches Gitea, so this cell cannot pass from a hosted runner no matter
-    # how it is configured. (gcr.ravenwolf.org IS reachable from hosted runners, as
-    # git-action-docker-cleanup's E2E proves, so this is a per-host rule.)
-    #
-    # continue-on-error is used instead of skipping: the cell still RUNS and a real
-    # failure is visible in the run, rather than the previous silent fallback to the
-    # literal 'skip' which reported green having tested nothing. Remove this once the
-    # host allows runner traffic or the job moves to a self-hosted runner.
-    continue-on-error: ${{ matrix.platform == 'gitea' }}
     # Run GitHub always; run Gitea only when TEST_GITEA_REPO is configured.
     # Note: job-level "if" with matrix context can fail when workflow is called; we skip Gitea in step instead.
     strategy:
