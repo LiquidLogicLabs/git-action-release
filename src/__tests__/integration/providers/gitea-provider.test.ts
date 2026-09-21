@@ -86,7 +86,8 @@ describe('GiteaProvider Integration Tests', () => {
         );
         fetchMock.mockResponse(
           `${apiBaseUrl}/repos/${testOwner}/${testRepo}/git/refs/heads/main`,
-          { status: 200, data: { ref: 'refs/heads/main', object: { sha: DEFAULT_BRANCH_SHA, type: 'commit' } } }
+          // Gitea returns an ARRAY here; see getDefaultBranchSha.
+          { status: 200, data: [{ ref: 'refs/heads/main', object: { sha: DEFAULT_BRANCH_SHA, type: 'commit' } }] }
         );
         fetchMock.mockResponse(`${apiBaseUrl}/repos/${testOwner}/${testRepo}/tags`, {
           status: 201,
@@ -126,6 +127,16 @@ describe('GiteaProvider Integration Tests', () => {
       it("ignores the environment SHA when the forge cannot be proven", async () => {
         process.env.GITHUB_SHA = ENV_SHA;
         delete process.env.GITHUB_SERVER_URL;
+        await expect(tagTargetAfterCreateRelease()).resolves.toBe(DEFAULT_BRANCH_SHA);
+        delete process.env.GITHUB_SHA;
+      });
+
+      it('reads the default-branch SHA from the array Gitea actually returns', async () => {
+        // Regression: getDefaultBranchSha typed this endpoint as a single object and
+        // read .object.sha off the array, yielding undefined and throwing
+        // "Could not get HEAD SHA for branch main" against a real Gitea instance.
+        process.env.GITHUB_SHA = ENV_SHA;
+        process.env.GITHUB_SERVER_URL = 'https://github.com'; // force the default-branch path
         await expect(tagTargetAfterCreateRelease()).resolves.toBe(DEFAULT_BRANCH_SHA);
         delete process.env.GITHUB_SHA;
       });

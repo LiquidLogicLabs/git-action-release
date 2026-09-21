@@ -113,19 +113,28 @@ export class GiteaProvider extends BaseProvider {
     }
 
     const branchUrl = `${this.apiBaseUrl}/repos/${safeSegment(this.owner, 'owner')}/${safeSegment(this.repo, 'repo')}/git/refs/heads/${safeSegment(repoData.default_branch, 'defaultbranch')}`;
-    const { data: branchData } = await this.request<{
-      ref?: string;
-      object?: { sha: string; type?: string; url?: string };
-    }>(branchUrl, {
+    type GitRef = { ref?: string; object?: { sha: string; type?: string; url?: string } };
+
+    // Gitea answers /git/refs/{ref} with an ARRAY of matching refs, not a single
+    // object -- `refs/heads/main` is a prefix query. Both shapes are accepted because
+    // the endpoint returns a bare object when queried with a fully qualified ref on
+    // some versions. Reading .object.sha off the array yielded undefined and threw
+    // "Could not get HEAD SHA", which stayed invisible while GITHUB_SHA always
+    // short-circuited this method.
+    const { data: branchData } = await this.request<GitRef | GitRef[]>(branchUrl, {
       method: 'GET',
     });
 
-    if (!branchData?.object?.sha) {
+    const ref: GitRef | undefined = Array.isArray(branchData)
+      ? branchData.find((r) => r?.object?.sha)
+      : branchData;
+
+    if (!ref?.object?.sha) {
       throw new Error(`Could not get HEAD SHA for branch ${repoData.default_branch}`);
     }
 
-    this.logger.debug(`Default branch ${repoData.default_branch} HEAD SHA: ${branchData.object.sha}`);
-    return branchData.object.sha;
+    this.logger.debug(`Default branch ${repoData.default_branch} HEAD SHA: ${ref.object.sha}`);
+    return ref.object.sha;
   }
 
   /**

@@ -33409,14 +33409,23 @@ class GiteaProvider extends provider_1.BaseProvider {
             throw new Error('Could not determine default branch from repository');
         }
         const branchUrl = `${this.apiBaseUrl}/repos/${(0, repository_1.safeSegment)(this.owner, 'owner')}/${(0, repository_1.safeSegment)(this.repo, 'repo')}/git/refs/heads/${(0, repository_1.safeSegment)(repoData.default_branch, 'defaultbranch')}`;
+        // Gitea answers /git/refs/{ref} with an ARRAY of matching refs, not a single
+        // object -- `refs/heads/main` is a prefix query. Both shapes are accepted because
+        // the endpoint returns a bare object when queried with a fully qualified ref on
+        // some versions. Reading .object.sha off the array yielded undefined and threw
+        // "Could not get HEAD SHA", which stayed invisible while GITHUB_SHA always
+        // short-circuited this method.
         const { data: branchData } = await this.request(branchUrl, {
             method: 'GET',
         });
-        if (!branchData?.object?.sha) {
+        const ref = Array.isArray(branchData)
+            ? branchData.find((r) => r?.object?.sha)
+            : branchData;
+        if (!ref?.object?.sha) {
             throw new Error(`Could not get HEAD SHA for branch ${repoData.default_branch}`);
         }
-        this.logger.debug(`Default branch ${repoData.default_branch} HEAD SHA: ${branchData.object.sha}`);
-        return branchData.object.sha;
+        this.logger.debug(`Default branch ${repoData.default_branch} HEAD SHA: ${ref.object.sha}`);
+        return ref.object.sha;
     }
     /**
      * Check if a tag exists in the repository
