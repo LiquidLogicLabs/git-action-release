@@ -1,0 +1,11 @@
+next:
+  '001': 2
+backlog:
+- key: BL-E001-001
+  epic: '001'
+  sprint: ''
+  title: Gitea release creates the tag at GITHUB_SHA, which does not exist in a different target repo
+  source: CI/CD review 2026-09-21 / E2E run 35630877931
+  severity: High
+  status: backlog
+  description: "src/platform/gitea.ts:110-121 (createRelease) resolves the commit SHA for a not-yet-existing tag as: 1) config.commit input, 2) process.env.GITHUB_SHA, 3) getDefaultBranchSha() of the target repo. Step 2 is wrong whenever the target repository is not the repository the workflow runs in, which is the cross-forge case this action exists for. GITHUB_SHA is the running workflow's commit and generally does not exist in the target Gitea repo, so Gitea answers: HTTP 404 'target not found: object does not exist [id: <sha>, rel_path: ]'. Observed in E2E run 35630877931 where the id was the commit just pushed to git-action-release itself. Callers that pass 'commit' explicitly never hit it, which is why it went unnoticed; it was invisible entirely while the Gitea E2E cell silently skipped. Proposed fix: prefer getDefaultBranchSha() and only trust GITHUB_SHA when the target repo is the current repo (compare against GITHUB_REPOSITORY and the resolved base URL). Needs a dist rebuild and a release. The E2E gitea cell is currently continue-on-error so this reports without blocking releases."

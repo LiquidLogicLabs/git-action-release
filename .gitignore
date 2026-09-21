@@ -51,3 +51,11 @@ coverage/
 # npm registry auth (keep local; do not commit credentials)
 .npmrc
 _bmad-output/
+# ...except the l3io-pm state tree. issues.yaml is the backlog and is durable
+# project state, not generated output: it must travel with the repo. Git needs the
+# parent directories un-ignored for the negation to take effect.
+!_bmad-output/
+_bmad-output/*
+!_bmad-output/implementation-artifacts/
+_bmad-output/implementation-artifacts/*
+!_bmad-output/implementation-artifacts/state/
