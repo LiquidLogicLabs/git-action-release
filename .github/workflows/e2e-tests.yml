@@ -8,8 +8,11 @@ on:
   workflow_dispatch:  # Manual trigger only
 
 concurrency:
+  # Distinct 'e2e-' prefix: release.yml calls this workflow and groups on
+  # ${{ github.workflow }}-<ref>, which resolves to the SAME value here when called.
+  # CLAUDE.md records a shared group between caller and callee as a deadlock.
   # Fallbacks so group is valid on GitHub, Gitea, and act (e.g. workflow_dispatch has no ref)
-  group: ${{ github.workflow || 'E2E Tests' }}-${{ github.ref || github.sha }}
+  group: e2e-${{ github.workflow || 'E2E Tests' }}-${{ github.ref || github.sha }}
   cancel-in-progress: true
 
 permissions:
