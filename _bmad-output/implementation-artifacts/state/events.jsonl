@@ -1,1 +1,2 @@
 {"cause": "cli", "epic": "001", "event": "issue_opened", "key": "BL-E001-001", "session": null, "severity": "High", "ts": "2026-09-21T19:07:28Z"}
+{"cause": "cli", "epic": "001", "event": "issue_resolved", "key": "BL-E001-001", "ref": "c564e18c6a0d2d1bf0acfc5ecc9b45751552bbc3", "resolution": "fixed", "session": null, "ts": "2026-09-21T22:50:06Z"}
