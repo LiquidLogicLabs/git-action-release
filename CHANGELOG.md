@@ -1,3 +1,14 @@
+## [2.0.11](https://github.com/LiquidLogicLabs/git-action-release/compare/v2.0.10...v2.0.11) (2026-09-21)
+
+
+### Bug Fixes
+
+* **e2e:** point the Gitea cell at Gitea, not github.com ([d078311](https://github.com/LiquidLogicLabs/git-action-release/commit/d07831155b94fcd461bfab4a20b26f7ad9110e7d))
+* **gitea:** do not tag at GITHUB_SHA when releasing to a different repository ([4fcf0ac](https://github.com/LiquidLogicLabs/git-action-release/commit/4fcf0ac987aaff20dd6118f824deaf15df67a1f3))
+* **gitea:** read the default-branch SHA from the array Gitea returns ([c564e18](https://github.com/LiquidLogicLabs/git-action-release/commit/c564e18c6a0d2d1bf0acfc5ecc9b45751552bbc3))
+* **release-notes:** categorise revert commits under Maintenance ([76345bb](https://github.com/LiquidLogicLabs/git-action-release/commit/76345bb6e588febb92848f98ef9d644edaab1494))
+* **release-notes:** categorise the changelog by conventional-commit type ([56b7be3](https://github.com/LiquidLogicLabs/git-action-release/commit/56b7be3bf69ad6d6feecb508708e248e1903a7da))
+* **release-notes:** drop the dead PR_LIST placeholder ([3d4c092](https://github.com/LiquidLogicLabs/git-action-release/commit/3d4c092140810546eb502c650831c77966bb18dd))
 ## [2.0.10](https://github.com/LiquidLogicLabs/git-action-release/compare/v2.0.9...v2.0.10) (2026-09-08)
 ## [2.0.9](https://github.com/LiquidLogicLabs/git-action-release/compare/v2.0.8...v2.0.9) (2026-09-08)
 
