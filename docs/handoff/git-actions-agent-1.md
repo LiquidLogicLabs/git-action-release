@@ -4,6 +4,13 @@ Canonical handoff for work spanning the **17-repo LiquidLogicLabs/actions set**.
 the monorepo root is **not a git repository**, so a root-level note is untracked and unshareable (see
 "Structural blocker"). Pointer copies exist in the three repos that still hold live state.
 
+**Which session name to use.** This session has been listed under **two** names during its own
+lifetime: `git actions - agent 1 [de0c14]` and later `actions-30 [649305]` — name *and* ref both
+changed. The filename keeps the original form because three repos, the shared KB and several peer
+messages already reference it; renaming would break those for no gain. **Do not address either literal
+name.** Session names here are not stable identifiers — read the current one from `ListAgents` and use
+that. The durable identifier for this work is this file's path, not any agent name.
+
 Session window: 2026-09-21 → 2026-09-27. Durable findings are in the shared basic-memory KB under
 `home-lab`; this note covers only what is **unresolved or in flight**. Do not re-derive the findings —
 read the notes.
@@ -31,7 +38,12 @@ read the notes.
   unattributed; that inference was right and is now closed.
   **Do not touch this repo until Shawn rules** — passed on as `n8n-docker-da`'s explicit request. This
   agent has touched none of their 42 files, and removed the one untracked pointer it had placed in that
-  tree so a `git add -A` cannot sweep it into their commit. Verified green: `tsc --noEmit` clean, lint clean, 157 tests pass, coverage
+  tree so a `git add -A` cannot sweep it into their commit. **`git-action-tag-info` therefore has no
+  pointer to this handoff, deliberately** — pointers exist only in `git-action-docker-metadata` and
+  `npm-package-git-platform-detector`. Anyone landing in tag-info first will not be signposted here;
+  that is the accepted cost of not littering a tree holding someone else's uncommitted work.
+  Re-verified 2026-09-27: HEAD still `84375ac`, still exactly 42 entries all ` M`, 0 untracked, 0
+  unpushed — the work is still uncommitted and unclaimed. Verified green: `tsc --noEmit` clean, lint clean, 157 tests pass, coverage
   34.73/29.37/39.73/34.42 against the ratchet's 32/26/37/32, and `dist/index.js` byte-matches a fresh
   `npm run package` (so it is **not** act `--bind` pollution).
   Pending decision: commit to `main` (house style is linear direct commits) or park on a branch. My
@@ -103,6 +115,13 @@ with the measurement that overturned them. Treat anything below as unverified:
   **Resolved 2026-09-27**: author confirmed as the `n8n-docker-da` session, base commit `84375ac`. The
   inference was correct. Kept here as a record that it *was* an inference until independently confirmed.
 - [todo] "13/16 repos pass under act" is one measurement on one machine on one day, not an invariant.
+
+**Verification boundary, worth inheriting.** A peer verified KB ingestion by comparing disk against
+index in both directions, which cannot detect a note that never reached disk — one session's note was
+missing and had to be rewritten. Same class as the entries above: the apparatus was checked, the thing
+it was supposed to prove was not. When confirming this handoff exists, read it from the **remote**
+(`gh api repos/<owner>/<repo>/contents/<path>`), not from local disk; local presence proves nothing
+about what was pushed. That is how the checks recorded here were done.
 
 ## Relations
 
