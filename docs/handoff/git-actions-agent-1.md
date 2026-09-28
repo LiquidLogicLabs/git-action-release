@@ -15,6 +15,24 @@ Session window: 2026-09-21 → 2026-09-27. Durable findings are in the shared ba
 `home-lab`; this note covers only what is **unresolved or in flight**. Do not re-derive the findings —
 read the notes.
 
+## Where the working artifacts live
+
+`/tmp` on this host is **tmpfs** — resident RAM, gone on reboot — and the box was under
+memory pressure on 2026-09-28, so the residue worth keeping was copied to durable disk:
+
+    ~/work-artifacts/liquidlogiclabs-actions/     (60K, README.md explains each piece)
+      act-event-payloads/    synthetic event JSON for `act -n`; no event-issues.json exists
+                             anywhere in the repo set, so triage.yml cannot be dry-run without it
+      coverage-calibration/  the four measurement passes behind the committed thresholds,
+                             including the local-vs-CI gap that made the first attempt wrong
+      scripts/               install-bmad.sh, commit-bmad.sh, act-sweep.sh — the last encodes
+                             the only act invocation that works here (under `infisical run`,
+                             without `--user`)
+
+~22M of throwaway clones and diagnostics was deliberately **not** preserved; the README
+lists what and why. Nothing durable was ever only in `/tmp`: the work is in the 17 repos,
+the findings are in basic-memory, and this note is committed.
+
 ## Read first
 
 - `CLAUDE.md` in each repo you touch. **`git-action-docker-metadata/CLAUDE.md` especially** — it has its
