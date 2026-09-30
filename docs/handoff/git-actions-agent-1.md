@@ -44,35 +44,29 @@ the findings are in basic-memory, and this note is committed.
 - Project memory, `verify-the-measurement-not-just-the-result` — the failure mode that cost the most time
   here.
 
-## In flight — needs a decision
+## Was in flight — both resolved 2026-09-30
 
-- [blocked] **`git-action-tag-info` has 42 uncommitted modified files on `main`**: a new
-  `include-prereleases` input, +356/−32 across 13 files (11 src, 2 tests, `README.md`, `action.yml`) plus
-  a matching `dist/` rebuild.
-  **Author: the `n8n-docker-da` session** (confirmed 2026-09-27 via `home-lab agent 4`; that session
-  works primarily in `n8n-docker`, which is why work in this tree is easy to miss). Their recorded base
-  commit is **`84375ac`**, which is this repo's current `main` HEAD — 0 commits between, so it applies
-  cleanly with no rebase. Originally found by mtimes alone (2026-09-26 01:28–01:37) and recorded as
-  unattributed; that inference was right and is now closed.
-  **Do not touch this repo until Shawn rules** — passed on as `n8n-docker-da`'s explicit request. This
-  agent has touched none of their 42 files, and removed the one untracked pointer it had placed in that
-  tree so a `git add -A` cannot sweep it into their commit. **`git-action-tag-info` therefore has no
-  pointer to this handoff, deliberately** — pointers exist only in `git-action-docker-metadata` and
-  `npm-package-git-platform-detector`. Anyone landing in tag-info first will not be signposted here;
-  that is the accepted cost of not littering a tree holding someone else's uncommitted work.
-  Re-verified 2026-09-27: HEAD still `84375ac`, still exactly 42 entries all ` M`, 0 untracked, 0
-  unpushed — the work is still uncommitted and unclaimed. Verified green: `tsc --noEmit` clean, lint clean, 157 tests pass, coverage
-  34.73/29.37/39.73/34.42 against the ratchet's 32/26/37/32, and `dist/index.js` byte-matches a fresh
-  `npm run package` (so it is **not** act `--bind` pollution).
-  Pending decision: commit to `main` (house style is linear direct commits) or park on a branch. My
-  recommendation was a branch — it is a new **public input** on a published action. Completeness is
-  still unverified (the author has not said it is finished; only that it is theirs).
-  **It exists only as uncommitted files on one disk.** Until it is committed somewhere, one stray
-  `git checkout --` loses 356 lines — and the authorship link above lives only in this note plus two
-  sessions' memory, so if both clear before it is committed, the next finder faces the same ambiguity
-  without even the mtimes.
-- [todo] If that work lands, **raise the coverage ratchet** in `git-action-tag-info/jest.config.js` —
-  coverage rose above the recorded floor, so the improvement is not currently locked in.
+Nothing in this section needs a decision any more. Kept rather than deleted because the
+authorship trail and the behaviour caveat below are the durable record.
+
+- [done] ~~**`git-action-tag-info` had 42 uncommitted modified files on `main`**~~ — **LANDED
+  2026-09-30** as `0908a20`, committed directly to `main` on Shawn's ruling, CI green. Authored by the
+  `n8n-docker-da` session and credited in the commit trailer. Every green claim recorded below was
+  re-verified independently before committing, and all held: tsc clean, eslint clean, 157 tests in 7
+  suites, coverage 34.73/29.37/39.73/34.42, and `dist/index.js` plus its map byte-identical to a fresh
+  `npm run package`.
+  **One thing the earlier record understated:** the diff is not purely the additive `include-prereleases`
+  input. It also broadens `parseSemver` to accept namespaced tags (`n8n@2.39.9`, `pkg/1.2.3`,
+  `release-1.2.3`), which **changes existing behaviour** — such tags previously parsed as non-semver, so
+  callers fell back to date ordering and picked whichever release line published most recently rather
+  than the highest version. That is called out in the commit body; it was not opt-in and is worth knowing
+  if a consumer's `latest` resolution shifts.
+  The `.git/UNCOMMITTED-WORK-OWNER.txt` signpost in that tree has been removed — it said DO NOT COMMIT
+  for work that is now committed, and a stale warning is worse than none.
+- [done] ~~If that work lands, **raise the coverage ratchet** in `git-action-tag-info/jest.config.js`~~
+  — **done 2026-09-30** as `6d75634`: 32/26/37/32 -> 33/28/38/33, calibrated from the CI-observed
+  numbers for `0908a20` and held one point below them. Proven non-vacuous: at `statements: 36` jest
+  fails with "not met: 34.73%", at 33 it passes.
 
 ## Blocked
 
